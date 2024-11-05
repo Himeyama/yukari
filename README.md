@@ -1,49 +1,24 @@
-# WinUIExample
-WinUI3 アプリの例とインストーラーを作成する例です。
+# Yukari
+Yukari は生成 AI クライアントのデスクトップアプリです。
+Windows 10 / 11 対応の WinUI 3 アプリです。
 
-![WinUI3 Screenshot](docs/screenshot01.png)
+![](docs/image01.png)
 
-## 開発
-`./dev.ps1` にコマンドをまとめています。
 
-### アプリの実行
-```ps1
-./dev run
-```
+Yukari は以下の 3 つのプロジェクトの組み合わせでできています。
+- yukari
+- [yukari-ui](https://github.com/himeyama/yukari-ui)
+- [yukari-engine](https://github.com/himeyama/yukari-engine)
 
-### インストーラーの作成
-インストーラー `install.exe` を作成します
+## yukari
+- WinUI 3 を使用したデスクトップアプリ
+- ユーザーが操作するメインアプリケーション
 
-```ps1
-./dev pack
-```
+## [yukari-ui](https://github.com/himeyama/yukari-ui)
+- デスクトップアプリの UI コンポーネントを構成する React アプリ
+- ユーザーインターフェースを提供し、yukari に統合されている
 
-Install.exe を実行すると、インストーラーが起動します。
-コントロールパネルまたは設定からアンインストールができます。
-
-![](docs/screenshot02.png)
-
-### アプリの発行
-```ps1
-./dev publish
-```
-
-### アプリを ZIP ファイルにまとめる
-```ps1
-./dev zip
-```
-
-### インストール
-
-> [!NOTE]
-> レジストリには登録されないため、コントロールパネルまたは設定からアンインストールができません。
-
-```ps1
-./dev install
-```
-
-## アンインストール
-
-```ps1
-./dev uninstall
-```
+## [yukari-engine](https://github.com/himeyama/yukari-engine)
+- Web API サーバーの機能を提供
+- OpenAI の API キーを管理する役割
+- デスクトップアプリ (yukari) からのリクエストを処理

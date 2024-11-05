@@ -1,11 +1,11 @@
-﻿$csproj = ".\WinUIExample\WinUIExample.csproj"
-$appName = "WinUIExample"
+﻿$csproj = ".\Yukari\Yukari.csproj"
+$appName = "Yukari"
 $publisher = "ひかり"
-$execFile = "WinUIExample.exe"
+$execFile = "Yukari.exe"
 $version = (Get-Date).ToString("yy.M.d")
 $date = (Get-Date).ToString("yyyyMMdd")
-$publishDir = "WinUIExample\publish"
-$muiIcon = "WinUIExample\Assets\App.ico"
+$publishDir = "Yukari\publish"
+$muiIcon = "Yukari\Assets\App.ico"
 $size = [Math]::Round((Get-ChildItem $publishDir -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum / 1KB, 0, [MidpointRounding]::AwayFromZero)
 
 $startMenuPath = [Environment]::GetFolderPath("Programs")
