@@ -7,6 +7,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
     <Grid>
-        <WebView2 Grid.Row="1" Source="http://localhost:3000" />
+        <WebView2 Name="WebUI" Grid.Row="1" Source="http://127.0.0.1:50027/index.html" />
     </Grid>
 </Page>
