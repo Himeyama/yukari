@@ -54,9 +54,15 @@ public sealed partial class MainWindow : Window
     void InitAPI()
     {
         string exePath = Path.Combine("build", "yukari-engine", "yukari-engine.exe");
-        if (!File.Exists(exePath))
+
+        string currentDirectory = Directory.GetCurrentDirectory();
+        string relativePath = @"..\yukari-engine\yukari-engine.exe";
+        string exePathDeploy = Path.Combine(currentDirectory, relativePath);
+        if(File.Exists(exePathDeploy))
+            exePath = exePathDeploy;
+        if(!File.Exists(exePath))
             return;
-        
+
         // プロセスの情報を設定
         ProcessStartInfo startInfo = new()
         {
