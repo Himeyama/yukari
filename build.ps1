@@ -1,4 +1,6 @@
-﻿if (Test-Path -Path "build") {
+﻿Stop-Process yukari-engine -ErrorAction SilentlyContinue
+Stop-Process yukari -ErrorAction SilentlyContinue
+if (Test-Path -Path "build") {
     Remove-Item -Path "build" -Recurse -Force
 }
 New-Item -Path build -ItemType Directory
