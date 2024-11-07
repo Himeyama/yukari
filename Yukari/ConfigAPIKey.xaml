@@ -1,0 +1,8 @@
+<Page
+    x:Class="Yukari.ConfigAPIKey"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+        <PasswordBox Name="APIKeyBox" x:FieldModifier="Public" />
+    </StackPanel>
+</Page>

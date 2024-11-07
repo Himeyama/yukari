@@ -13,6 +13,9 @@ Move-Item ..\yukari-engine\target\release build\yukari-engine
 Set-Location ..\yukari-ui
 yarn build
 Set-Location ..\yukari
+if (Test-Path -Path "build\yukari-ui") {
+    Remove-Item -Path "build\yukari-ui" -Recurse -Force
+}
 Move-Item ..\yukari-ui\build build\yukari-ui
 
 # yukari のビルド

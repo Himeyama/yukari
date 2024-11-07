@@ -15,14 +15,15 @@
             <Grid ColumnDefinitions="Auto, *">
                 <MenuBar Grid.Column="0">
                     <MenuBarItem Title="File" x:Uid="File">
+                        <MenuFlyoutItem Text="Set up the OpenAI API key" x:Uid="SetAPIKey" Click="ClickSetAPIKey" Name="SetAPIKey" />
                         <MenuFlyoutItem Text="Exit" x:Uid="Exit" Click="ClickExit" />
                     </MenuBarItem>
 
-                    <MenuBarItem Title="Edit" x:Uid="Edit">
-                    </MenuBarItem>
+                    <!-- <MenuBarItem Title="Edit" x:Uid="Edit">
+                    </MenuBarItem> -->
 
-                    <MenuBarItem Title="View" x:Uid="View">
-                    </MenuBarItem>
+                    <!-- <MenuBarItem Title="View" x:Uid="View">
+                    </MenuBarItem> -->
 
                     <MenuBarItem Title="Help" x:Uid="Help">
                         <MenuFlyoutItem Text="About" x:Uid="About" Click="ClickAbout" />
@@ -52,6 +53,9 @@
 
         <Grid Visibility="Collapsed">
             <TextBlock x:Uid="NewTab" Name="NewTab" />
+            <TextBlock x:Uid="Cancel" Name="Cancel" />
+            <TextBlock x:Uid="APIKeySuccessfullySet" Name="APIKeySuccessfullySet" />
+            <TextBlock x:Uid="APIKeySettingFailed" Name="APIKeySettingFailed" />
         </Grid>
     </Grid>
 </Window>
