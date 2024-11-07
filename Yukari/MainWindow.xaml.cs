@@ -40,10 +40,10 @@ public sealed partial class MainWindow : Window
                 apiProcess.Kill();
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // ログに出力やエラーハンドリングを行います
-            // Console.WriteLine("Error while killing the process: " + ex.Message);
+            ShowErrorDialog($"Error while killing the process: {ex.Message}");
         }
         finally
         {
@@ -127,6 +127,11 @@ public sealed partial class MainWindow : Window
             Content = new Client(apiEnginePort)
         };
         return newItem;
+    }
+
+    void ShowErrorDialog(string message)
+    {
+        ErrorDialog.Show(this, message);
     }
 
     void ClickExit(object sender, RoutedEventArgs e)

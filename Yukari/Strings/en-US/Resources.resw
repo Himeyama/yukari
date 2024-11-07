@@ -70,4 +70,7 @@
   <data name="NewTab.Text" xml:space="preserve">
     <value>New tab</value>
   </data>
+  <data name="Error.Text" xml:space="preserve">
+    <value>Error</value>
+  </data>
 </root>
