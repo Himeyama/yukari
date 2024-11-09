@@ -25,6 +25,8 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Title = "Yukari";
+
         // クロージングの処理
         AppWindow thisAppWin = GetCurrentAppWin();
         if (thisAppWin != null)

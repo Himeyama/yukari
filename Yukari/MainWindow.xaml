@@ -36,7 +36,8 @@
                     x:Uid="AppTitleText"
                     Text="Yukari"
                     VerticalAlignment="Center"
-                    HorizontalAlignment="Center" />
+                    HorizontalAlignment="Center"
+                    Visibility="Collapsed" />
             </Grid>
         </Grid>
 
