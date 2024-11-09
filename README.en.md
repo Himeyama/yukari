@@ -4,7 +4,7 @@
 Yukari is a desktop application for generative AI clients.
 It is a WinUI 3 application compatible with Windows 10 / 11.
 
-![](docs/image01.png)
+![](docs/Demo.gif)
 
 ## Download
 
