@@ -8,15 +8,18 @@ New-Item -Path build -ItemType Directory
 # yukari-engine のビルド
 Set-Location ..\yukari-engine
 cargo build --release
+cargo license --color never > hikari-engine-3rd-party-licenses.txt
 Set-Location ..\yukari
 if (Test-Path -Path "build\yukari-engine") {
     Remove-Item -Path "build\yukari-engine" -Recurse -Force
 }
 Move-Item ..\yukari-engine\target\release build\yukari-engine
+Move-Item ..\yukari-engine\hikari-engine-3rd-party-licenses.txt .\build\yukari-engine
 
 # yukari-ui のビルド
 Set-Location ..\yukari-ui
 yarn build
+yarn licenses list > hikari-ui-3rd-party-licenses.txt
 Set-Location ..\yukari
 if (Test-Path -Path "build\yukari-ui") {
     Remove-Item -Path "build\yukari-ui" -Recurse -Force
