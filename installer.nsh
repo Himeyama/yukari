@@ -51,7 +51,7 @@ Section
 
     # スタート メニューにショートカットを登録
     CreateDirectory "$SMPROGRAMS\\${PRODUCT_NAME}"
-    SetOutPath "$INSTDIR\\${DESKTOP_APP_NAME}"
+    SetOutPath "$INSTDIR\${DESKTOP_APP_NAME}"
     CreateShortcut "$SMPROGRAMS\\${PRODUCT_NAME}\\${PRODUCT_NAME}.lnk" "$INSTDIR\\${DESKTOP_APP_NAME}\\${EXEC_FILE}" "" "$INSTDIR\${DESKTOP_APP_NAME}\${PRODUCT_NAME}.exe"
 
     # レジストリに登録

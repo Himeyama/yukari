@@ -1,5 +1,5 @@
-﻿Stop-Process yukari-engine -ErrorAction SilentlyContinue
-Stop-Process yukari -ErrorAction SilentlyContinue
+﻿Stop-Process -Name yukari-engine -ErrorAction SilentlyContinue
+Stop-Process -Name yukari -ErrorAction SilentlyContinue
 if (Test-Path -Path "build") {
     Remove-Item -Path "build" -Recurse -Force
 }
@@ -9,6 +9,9 @@ New-Item -Path build -ItemType Directory
 Set-Location ..\yukari-engine
 cargo build --release
 Set-Location ..\yukari
+if (Test-Path -Path "build\yukari-engine") {
+    Remove-Item -Path "build\yukari-engine" -Recurse -Force
+}
 Move-Item ..\yukari-engine\target\release build\yukari-engine
 
 # yukari-ui のビルド
@@ -35,3 +38,5 @@ $publisher = "ひかり"
 $muiIcon = "Yukari\Assets\App.ico"
 $size = [Math]::Round((Get-ChildItem $publishDir -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum / 1KB, 0, [MidpointRounding]::AwayFromZero)
 .'C:\Program Files (x86)\NSIS\makensis.exe' /DDESKTOP_APP_NAME="$appName" /DVERSION="$version" /DDATE="$date" /DSIZE="$size" /DMUI_ICON="$muiIcon" /DMUI_UNICON="$muiIcon" /DPUBLISH_DIR="$publishDir" /DPRODUCT_NAME="$appName" /DEXEC_FILE="$execFile" /DPUBLISHER="$publisher" installer.nsh
+
+# scp install.exe 10.16.125.231:.

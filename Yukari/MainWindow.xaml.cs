@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -62,6 +63,34 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // UI コントロール部
+    void SetStatusBar(string message){
+        if (DispatcherQueue.HasThreadAccess)
+        {
+            StatusBar.Text = message;
+        }
+        else
+        {
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => {
+                StatusBar.Text = message;
+            });
+        }
+    }
+
+    int messageIndex = 0;
+    void AddMessage(string message, int delay = 3000){
+        Task.Run(async() => {
+            int messageIdx = messageIndex;
+            SetStatusBar(message);
+            await Task.Delay(delay);
+            if(messageIdx == messageIndex){
+                SetStatusBar("");
+            }
+            messageIndex++;
+        });
+    }
+
+    // 内部 API 初期化部
     void InitAPI()
     {
         string exePath = Path.Combine("build", "yukari-engine", "yukari-engine.exe");
@@ -142,39 +171,6 @@ public sealed partial class MainWindow : Window
         return newItem;
     }
 
-    async Task<string> GetApiKeyAsync(int? port)
-    {
-        if(port == null)
-            return null;
-
-        using HttpClient client = new();
-        // ベースアドレスを設定
-        client.BaseAddress = new Uri($"http://127.0.0.1:{port}/");
-        try
-        {
-            // GET リクエストを送信
-            HttpResponseMessage response = await client.GetAsync("api/apikey");
-
-            // レスポンスを確認
-            if (response.IsSuccessStatusCode)
-            {
-                // レスポンス内容を文字列として取得
-                string result = await response.Content.ReadAsStringAsync();
-                return result; // API キーを返す
-            }
-            else
-            {
-                ShowErrorDialog($"Error: {response.StatusCode}");
-                return null;
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowErrorDialog($"An exception has occurred: {ex.Message}");
-            return null;
-        }
-    }
-
     async void SetUpAPIKey(string apiKey, int? port)
     {
         if(port == null)
@@ -224,13 +220,39 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    async Task<string> GetApiKeyAsync(int? port)
+    {
+        if(port == null)
+            return "";
+
+        using HttpClient client = new();
+        // ベースアドレスを設定
+        // APIエンドポイントのURL
+        string url = $"http://127.0.0.1:{port}/api/apikey";
+
+        try
+        {
+            // GETリクエストを送信
+            HttpResponseMessage response = await client.GetAsync(url);
+
+            // レスポンスのステータスコードを確認
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            AddMessage($"An exception has occurred: {ex.Message}");
+        }
+        return "";
+    }
+
     async void ClickSetAPIKey(object sender, RoutedEventArgs e)
     {
         string apiKey = await GetApiKeyAsync(apiEnginePort);
-
         ConfigAPIKey configAPIKey = new();
-        if (apiKey != null)
-            configAPIKey.APIKeyBox.Password = apiKey;
+        configAPIKey.APIKeyBox.Password = apiKey;
 
         ContentDialog dialog = new()
         {
