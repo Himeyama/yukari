@@ -30,6 +30,7 @@ Move-Item ..\yukari-ui\build build\yukari-ui
 $csproj = ".\Yukari\Yukari.csproj"
 $version = (Get-Date).ToString("yy.M.d")
 dotnet publish $csproj -c Release -p:Version=$version -o build\yukari
+Copy-Item .\Yukari\Assets\third-party-oss.md .\build\yukari
 
 # NSIS
 $date = (Get-Date).ToString("yyyyMMdd")
