@@ -38,6 +38,9 @@ public sealed partial class MainWindow : Window
         InitAPI();
     }
 
+    // <summary>
+    // 現在のアプリケーション ウィンドウを取得します。
+    // </summary>
     AppWindow GetCurrentAppWin()
     {
         IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -45,6 +48,9 @@ public sealed partial class MainWindow : Window
         return AppWindow.GetFromWindowId(winId);
     }
 
+    // <summary>
+    // ウィンドウが閉じられる際の処理を行います。
+    // </summary>
     void OnWindowClosing(AppWindow sender, AppWindowClosingEventArgs e)
     {
         try
@@ -65,34 +71,47 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // UI コントロール部
-    void SetStatusBar(string message){
+    // <summary>
+    // ステータスバーにメッセージを設定します。
+    // </summary>
+    void SetStatusBar(string message)
+    {
         if (DispatcherQueue.HasThreadAccess)
         {
             StatusBar.Text = message;
         }
         else
         {
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => {
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () =>
+            {
                 StatusBar.Text = message;
             });
         }
     }
 
     int messageIndex = 0;
-    void AddMessage(string message, int delay = 3000){
-        Task.Run(async() => {
+
+    // <summary>
+    // 指定されたメッセージをステータスバーに追加し、一定時間後に消去します。
+    // </summary>
+    void AddMessage(string message, int delay = 3000)
+    {
+        Task.Run(async () =>
+        {
             int messageIdx = messageIndex;
             SetStatusBar(message);
             await Task.Delay(delay);
-            if(messageIdx == messageIndex){
+            if (messageIdx == messageIndex)
+            {
                 SetStatusBar("");
             }
             messageIndex++;
         });
     }
 
-    // 内部 API 初期化部
+    // <summary>
+    // 内部 API を初期化します。
+    // </summary>
     void InitAPI()
     {
         string exePath = Path.Combine("build", "yukari-engine", "yukari-engine.exe");
@@ -100,9 +119,9 @@ public sealed partial class MainWindow : Window
         string currentDirectory = Directory.GetCurrentDirectory();
         string relativePath = @"..\yukari-engine\yukari-engine.exe";
         string exePathDeploy = Path.Combine(currentDirectory, relativePath);
-        if(File.Exists(exePathDeploy))
+        if (File.Exists(exePathDeploy))
             exePath = exePathDeploy;
-        if(!File.Exists(exePath))
+        if (!File.Exists(exePath))
             return;
 
         // プロセスの情報を設定
@@ -123,14 +142,20 @@ public sealed partial class MainWindow : Window
         apiProcess.Start();
     }
 
-    void ClickAbout(object sender, RoutedEventArgs e) {
+    // <summary>
+    // "About" ボタンがクリックされたときに、指定された URL を開きます。
+    // </summary>
+    void ClickAbout(object sender, RoutedEventArgs e)
+    {
         string url = "https://github.com/himeyama/yukari"; // 開きたいURLを指定
         Process.Start(
             new ProcessStartInfo { FileName = url, UseShellExecute = true }
         );
     }
 
-    // TabView を読み込んだ時
+    // <summary>
+    // TabView を読み込んだときに呼び出され、API エンジンのポートを探します。
+    // </summary>
     async void TabView_Loaded(object sender, RoutedEventArgs e)
     {
         apiEnginePort = await APIManager.FindPortWithVersionAsync("127.0.0.1", 50027, 50050, "/api/version", "yukari-engine");
@@ -140,6 +165,9 @@ public sealed partial class MainWindow : Window
         tabView.SelectedItem = tabViewItem;
     }
 
+    // <summary>
+    // TabView に新しいタブを追加します。
+    // </summary>
     void TabView_AddButtonClick(TabView sender, object args)
     {
         TabView tabView = sender;
@@ -148,14 +176,21 @@ public sealed partial class MainWindow : Window
         tabView.SelectedItem = tabViewItem;
     }
 
+    // <summary>
+    // タブが閉じられるリクエストを処理します。
+    // </summary>
     void TabView_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
     {
         sender.TabItems.Remove(args.Tab);
     }
 
+    // <summary>
+    // 新しいタブを作成します。
+    // </summary>
     TabViewItem CreateNewTab()
     {
-        if(apiEnginePort == null){
+        if (apiEnginePort == null)
+        {
             // エラーを表示
             return null;
         }
@@ -164,7 +199,8 @@ public sealed partial class MainWindow : Window
         TabViewItem newItem = new()
         {
             Header = NewTab.Text,
-            IconSource = new SymbolIconSource() {
+            IconSource = new SymbolIconSource()
+            {
                 Symbol = Symbol.Contact
             },
             Content = client
@@ -173,33 +209,36 @@ public sealed partial class MainWindow : Window
         return newItem;
     }
 
+    // <summary>
+    // API キーを設定します。
+    // </summary>
     async void SetUpAPIKey(string apiKey, int? port)
     {
-        if(port == null)
+        if (port == null)
             return;
 
         // HttpClientのインスタンスを作成
         using HttpClient client = new();
-        
+
         // APIエンドポイントのURL
         string url = $"http://127.0.0.1:{port}/api/set_apikey";
 
         // リクエストボディを作成
         ApiKeyRequest requestContent = new() { Apikey = apiKey };
         // オブジェクトをJSONにシリアライズ
-        string json = JsonSerializer.Serialize(requestContent);        
+        string json = JsonSerializer.Serialize(requestContent);
         StringContent content = new(json, Encoding.UTF8, "application/json");
 
         try
         {
             // POSTリクエストを送信
             HttpResponseMessage response = await client.PostAsync(url, content);
-            
+
             // レスポンスのステータスコードを確認
             if (response.IsSuccessStatusCode)
             {
                 string responseBody = await response.Content.ReadAsStringAsync();
-                
+
                 string message = responseBody == "API key set successfully" ? APIKeySuccessfullySet.Text : APIKeySettingFailed.Text;
                 ContentDialog dialog = new()
                 {
@@ -222,9 +261,12 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // <summary>
+    // API キーを非同期に取得します。
+    // </summary>
     async Task<string> GetApiKeyAsync(int? port)
     {
-        if(port == null)
+        if (port == null)
             return "";
 
         using HttpClient client = new();
@@ -250,6 +292,9 @@ public sealed partial class MainWindow : Window
         return "";
     }
 
+    // <summary>
+    // API キー設定用のダイアログを表示し、入力された API キーを設定します。
+    // </summary>
     async void ClickSetAPIKey(object sender, RoutedEventArgs e)
     {
         string apiKey = await GetApiKeyAsync(apiEnginePort);
@@ -271,7 +316,8 @@ public sealed partial class MainWindow : Window
         if (result == ContentDialogResult.Primary)
         {
             apiKey = configAPIKey.APIKeyBox.Password;
-            if (apiEnginePort == null){
+            if (apiEnginePort == null)
+            {
                 ShowErrorDialog("The port number could not be detected. Please contact the developer.");
                 return;
             }
@@ -283,11 +329,17 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // <summary>
+    // 指定されたメッセージを含むエラーダイアログを表示します。
+    // </summary>
     public void ShowErrorDialog(string message)
     {
         ErrorDialog.Show(this, message);
     }
 
+    // <summary>
+    // アプリケーションを終了します。
+    // </summary>
     void ClickExit(object sender, RoutedEventArgs e)
     {
         Close();
