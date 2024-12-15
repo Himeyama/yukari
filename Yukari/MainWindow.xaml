@@ -19,12 +19,6 @@
                         <MenuFlyoutItem Text="Exit" x:Uid="Exit" Click="ClickExit" />
                     </MenuBarItem>
 
-                    <!-- <MenuBarItem Title="Edit" x:Uid="Edit">
-                    </MenuBarItem> -->
-
-                    <!-- <MenuBarItem Title="View" x:Uid="View">
-                    </MenuBarItem> -->
-
                     <MenuBarItem Title="Help" x:Uid="Help">
                         <MenuFlyoutItem Text="About" x:Uid="About" Click="ClickAbout" />
                     </MenuBarItem>
@@ -41,8 +35,35 @@
             </Grid>
         </Grid>
 
-        <Grid Grid.Row="1">
-            <TabView VerticalAlignment="Stretch" AddTabButtonClick="TabView_AddButtonClick" TabCloseRequested="TabView_TabCloseRequested" Loaded="TabView_Loaded" />
+        <Grid Grid.Row="1" ColumnDefinitions="Auto, *">
+            <Grid Grid.Column="0" Width="300" Margin="8, 8, 8, 8" RowDefinitions="Auto, Auto, Auto, *">
+                <TextBlock Text="Language model" x:Uid="LanguageModel" Margin="8, 0, 8, 0" FontWeight="Bold" FontSize="16" Grid.Row="0" />
+                <ComboBox x:FieldModifier="Public" Margin="4, 8, 4, 0" Grid.Row="1" HorizontalAlignment="Stretch" Name="SelectLanguageModel" >
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="local:LanguageModelItem">
+                            <TextBlock Text="{x:Bind DisplayName}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <TextBlock Text="History" x:Uid="History" Margin="8, 16, 8, 0" FontWeight="Bold" FontSize="16" Grid.Row="2" />
+                <Grid Grid.Row="3" Margin="0, 8, 0, 0">
+                    <ScrollViewer>
+                        <ListView Name="ChatItems" x:FieldModifier="Public">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="local:HistoryItem">
+                                    <StackPanel Margin="0, 8, 0, 8">
+                                        <TextBlock Text="{x:Bind HeadUser}" TextTrimming="WordEllipsis" />
+                                        <TextBlock Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0, 4, 0, 0" FontSize="12" Text="{x:Bind HeadAssistant}" TextTrimming="WordEllipsis" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+
+            <TabView SelectionChanged="Tabs_SelectionChanged" Grid.Column="1" Name="Tabs" VerticalAlignment="Stretch" AddTabButtonClick="TabView_AddButtonClick" TabCloseRequested="TabView_TabCloseRequested" Loaded="TabView_Loaded" />
         </Grid>
 
         <Grid Grid.Row="2">

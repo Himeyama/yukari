@@ -16,6 +16,25 @@ public class ApiKeyRequest
     public string Apikey { get; set; }
 }
 
+public class LanguageModelItem {
+    public string Name { get; set;}
+    public string DisplayName { get; set;}
+}
+
+public class HistoryItem
+{
+    [JsonPropertyName("user")]
+    public string User { get; set; }
+    [JsonPropertyName("assistant")]
+    public string Assistant { get; set; }
+    [JsonPropertyName("headuser")]
+    public string HeadUser { get; set; }
+    [JsonPropertyName("headassistant")]
+    public string HeadAssistant { get; set; }
+    [JsonPropertyName("uuid")]
+    public string Uuid { get; set; }
+}
+
 public sealed partial class MainWindow : Window
 {
     public MainWindow()
@@ -30,6 +49,40 @@ public sealed partial class MainWindow : Window
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
+
+        PopulateLanguageModelItems();
+        SelectLanguageModel.SelectedIndex = 1;
+
+        // ChatItems.Items.Add("This is a chat item");
+    }
+
+    void AddLanguageModelItem(string name, string displayName)
+    {
+        SelectLanguageModel.Items.Add(new LanguageModelItem()
+        {
+            Name = name,
+            DisplayName = displayName,
+        });
+    }
+
+    void PopulateLanguageModelItems()
+    {
+        Dictionary<string, string> languageModels = new()
+        {
+            { "gpt-4o", "GPT-4o" },
+            { "gpt-4o-mini", "GPT-4o mini" },
+            { "chatgpt-4o-latest", "GPT-4o latest" },
+            { "o1-mini", "o1-mini" },
+            { "o1-preview", "o1-preview" },
+            { "gpt-4", "GPT-4" },
+            { "gpt-4-turbo", "GPT-4o turbo" },
+            { "gpt-4-32k", "GPT-4 32k" },
+        };
+
+        foreach(KeyValuePair<string, string> model in languageModels)
+        {
+            AddLanguageModelItem(model.Key, model.Value);
+        }
     }
 
     // <summary>
@@ -72,7 +125,7 @@ public sealed partial class MainWindow : Window
     // <summary>
     // 指定されたメッセージをステータスバーに追加し、一定時間後に消去します。
     // </summary>
-    void AddMessage(string message, int delay = 3000)
+    public void AddMessage(string message, int delay = 3000)
     {
         Task.Run(async () =>
         {
@@ -133,6 +186,7 @@ public sealed partial class MainWindow : Window
     // </summary>
     TabViewItem CreateNewTab()
     {
+        ChatItems.Items.Clear();
         Client client = new(this);
         TabViewItem newItem = new()
         {
@@ -163,7 +217,7 @@ public sealed partial class MainWindow : Window
     // <summary>
     // API キーを非同期に取得します。
     // </summary>
-    string GetApiKey()
+    public static string GetApiKey()
     {
         // レジストリのパスを指定
         string subKeyPath = @"SOFTWARE\Yukari";
@@ -202,6 +256,19 @@ public sealed partial class MainWindow : Window
         else if (result == ContentDialogResult.Secondary)
         {
             // 何もしない
+        }
+    }
+
+    void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        TabView tabs = sender as TabView;
+        TabViewItem tabViewItem = tabs.SelectedItem as TabViewItem;
+
+        // 選択されたタブに基づいて関数を実行
+        if (tabViewItem.Content is Client client)
+        {
+            // タブのタイトルを取得
+            client.ApplyHistory();
         }
     }
 

@@ -7,6 +7,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
     <Grid>
-        <WebView2 Name="WebUI" Grid.Row="1" />
+        <Border CornerRadius="4" BorderBrush="Transparent" BorderThickness="0">
+            <WebView2 Name="WebUI" />
+        </Border>
     </Grid>
 </Page>
