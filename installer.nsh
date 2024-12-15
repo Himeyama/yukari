@@ -42,45 +42,48 @@ Section
     # 出力先を指定します。
     SetOutPath "$INSTDIR"
 
+    # 古いファイルの削除
+    RMDir /r "$INSTDIR"
+
     # インストールされるファイル
-    File /r "${PUBLISH_DIR}\\*.*"
+    File /r "${PUBLISH_DIR}\*.*"
     File "${MUI_ICON}"
 
     # アンインストーラを出力
-    WriteUninstaller "$INSTDIR\\Uninstall.exe"
+    WriteUninstaller "$INSTDIR\Uninstall.exe"
 
     # スタート メニューにショートカットを登録
-    CreateDirectory "$SMPROGRAMS\\${PRODUCT_NAME}"
+    CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
     SetOutPath "$INSTDIR\${DESKTOP_APP_NAME}"
-    CreateShortcut "$SMPROGRAMS\\${PRODUCT_NAME}\\${PRODUCT_NAME}.lnk" "$INSTDIR\\${DESKTOP_APP_NAME}\\${EXEC_FILE}" "" "$INSTDIR\${DESKTOP_APP_NAME}\${PRODUCT_NAME}.exe"
+    CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\${EXEC_FILE}" "" "$INSTDIR\${EXEC_FILE}"
 
     # レジストリに登録
-    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${PRODUCT_NAME}" "DisplayName" "${PRODUCT_NAME}"
-    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${PRODUCT_NAME}" "UninstallString" '"$INSTDIR\\Uninstall.exe"'
-    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${PRODUCT_NAME}" "Publisher" "${PUBLISHER}"
-    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${PRODUCT_NAME}" "DisplayIcon" "$INSTDIR\\${DESKTOP_APP_NAME}\\${PRODUCT_NAME}.exe,0"
-    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${PRODUCT_NAME}" "DisplayVersion" "${VERSION}"
-    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${PRODUCT_NAME}" "InstallDate" "${DATE}"
-    WriteRegDWORD HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${PRODUCT_NAME}" "EstimatedSize" "${SIZE}"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayName" "${PRODUCT_NAME}"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "Publisher" "${PUBLISHER}"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayIcon" "$INSTDIR\${PRODUCT_NAME}.exe,0"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayVersion" "${VERSION}"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "InstallDate" "${DATE}"
+    WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "EstimatedSize" "${SIZE}"
 SectionEnd
 
 # アンインストーラ
 Section "Uninstall"
     # アンインストーラを削除
-    Delete "$INSTDIR\\Uninstall.exe"
+    Delete "$INSTDIR\Uninstall.exe"
 
     # ファイルを削除
-    Delete "$INSTDIR\\${EXEC_FILE}"
+    Delete "$INSTDIR\${EXEC_FILE}"
 
     # ディレクトリを削除
     RMDir /r "$INSTDIR"
 
     # スタート メニューから削除
-    Delete "$SMPROGRAMS\\${PRODUCT_NAME}\\${PRODUCT_NAME}.lnk"
-    RMDir "$SMPROGRAMS\\${PRODUCT_NAME}"
+    Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"
+    RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
 
     # レジストリ キーを削除
-    DeleteRegKey HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${PRODUCT_NAME}"
+    DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 SectionEnd
 
 RequestExecutionLevel user

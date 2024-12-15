@@ -28,7 +28,7 @@ function Run() {
 }
 
 function Publish() {
-    $null = dotnet publish $csproj -c Release -p:Version=$version
+    dotnet publish $csproj -c Release -p:Version=$version
 }
 
 function Zip() {
@@ -72,10 +72,13 @@ function Uninstall() {
 }
 
 function Pack() {
+    if(Test-Path .\Yukari\publish){
+        Remove-Item -Recurse -Force .\Yukari\publish
+    }
     Publish
-    .'C:\Program Files (x86)\NSIS\makensis.exe' /DVERSION="$version" /DDATE="$date" /DSIZE="$size" /DMUI_ICON="$muiIcon" /DPUBLISH_DIR="$publishDir" /DPRODUCT_NAME="$appName" /DEXEC_FILE="$execFile" /DPUBLISHER="$publisher" installer.nsh
+    Copy-Item -Recurse ..\yukari-ui\build Yukari\publish\yukari-ui
+    .'C:\Program Files (x86)\NSIS\makensis.exe' /DVERSION="$version" /DDATE="$date" /DSIZE="$size" /DMUI_ICON="$muiIcon" /DPUBLISH_DIR="$publishDir" /DPRODUCT_NAME="$appName" /DEXEC_FILE="$execFile" /DPUBLISHER="$publisher" /DDESKTOP_APP_NAME="$appName" installer.nsh
 }
-
 
 if ($arg -eq "run") {
     Run
