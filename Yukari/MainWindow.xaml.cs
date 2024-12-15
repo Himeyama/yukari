@@ -1,12 +1,11 @@
 using System.Diagnostics;
-using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Win32;
 
 namespace Yukari;
 
@@ -19,9 +18,6 @@ public class ApiKeyRequest
 
 public sealed partial class MainWindow : Window
 {
-    int? apiEnginePort = null;
-    Process apiProcess = null;
-
     public MainWindow()
     {
         InitializeComponent();
@@ -34,8 +30,6 @@ public sealed partial class MainWindow : Window
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
-
-        InitAPI();
     }
 
     // <summary>
@@ -53,22 +47,6 @@ public sealed partial class MainWindow : Window
     // </summary>
     void OnWindowClosing(AppWindow sender, AppWindowClosingEventArgs e)
     {
-        try
-        {
-            if (apiProcess != null && !apiProcess.HasExited)
-            {
-                apiProcess.Kill();
-            }
-        }
-        catch (Exception ex)
-        {
-            // ログに出力やエラーハンドリングを行います
-            ShowErrorDialog($"Error while killing the process: {ex.Message}");
-        }
-        finally
-        {
-            apiProcess?.Dispose();
-        }
     }
 
     // <summary>
@@ -110,39 +88,6 @@ public sealed partial class MainWindow : Window
     }
 
     // <summary>
-    // 内部 API を初期化します。
-    // </summary>
-    void InitAPI()
-    {
-        string exePath = Path.Combine("build", "yukari-engine", "yukari-engine.exe");
-
-        string currentDirectory = Directory.GetCurrentDirectory();
-        string relativePath = @"..\yukari-engine\yukari-engine.exe";
-        string exePathDeploy = Path.Combine(currentDirectory, relativePath);
-        if (File.Exists(exePathDeploy))
-            exePath = exePathDeploy;
-        if (!File.Exists(exePath))
-            return;
-
-        // プロセスの情報を設定
-        ProcessStartInfo startInfo = new()
-        {
-            FileName = exePath,
-            WorkingDirectory = Path.GetDirectoryName(exePath),
-            UseShellExecute = false, // バックグラウンドで実行するために必要
-            CreateNoWindow = true, // 新しいウィンドウを作成しない
-        };
-
-        // プロセスをスタート
-        apiProcess = new()
-        {
-            StartInfo = startInfo
-        };
-        // プロセスを開始
-        apiProcess.Start();
-    }
-
-    // <summary>
     // "About" ボタンがクリックされたときに、指定された URL を開きます。
     // </summary>
     void ClickAbout(object sender, RoutedEventArgs e)
@@ -156,9 +101,8 @@ public sealed partial class MainWindow : Window
     // <summary>
     // TabView を読み込んだときに呼び出され、API エンジンのポートを探します。
     // </summary>
-    async void TabView_Loaded(object sender, RoutedEventArgs e)
+    void TabView_Loaded(object sender, RoutedEventArgs e)
     {
-        apiEnginePort = await APIManager.FindPortWithVersionAsync("127.0.0.1", 50027, 50050, "/api/version", "yukari-engine");
         TabView tabView = sender as TabView;
         TabViewItem tabViewItem = CreateNewTab();
         tabView.TabItems.Add(tabViewItem);
@@ -189,13 +133,7 @@ public sealed partial class MainWindow : Window
     // </summary>
     TabViewItem CreateNewTab()
     {
-        if (apiEnginePort == null)
-        {
-            // エラーを表示
-            return null;
-        }
-
-        Client client = new(apiEnginePort, this);
+        Client client = new(this);
         TabViewItem newItem = new()
         {
             Header = NewTab.Text,
@@ -212,84 +150,27 @@ public sealed partial class MainWindow : Window
     // <summary>
     // API キーを設定します。
     // </summary>
-    async void SetUpAPIKey(string apiKey, int? port)
+    static void SetUpAPIKey(string apiKey)
     {
-        if (port == null)
-            return;
+        // apiKeyの値と保存先のパスを指定
+        string subKeyPath = @"SOFTWARE\Yukari";
 
-        // HttpClientのインスタンスを作成
-        using HttpClient client = new();
-
-        // APIエンドポイントのURL
-        string url = $"http://127.0.0.1:{port}/api/set_apikey";
-
-        // リクエストボディを作成
-        ApiKeyRequest requestContent = new() { Apikey = apiKey };
-        // オブジェクトをJSONにシリアライズ
-        string json = JsonSerializer.Serialize(requestContent);
-        StringContent content = new(json, Encoding.UTF8, "application/json");
-
-        try
-        {
-            // POSTリクエストを送信
-            HttpResponseMessage response = await client.PostAsync(url, content);
-
-            // レスポンスのステータスコードを確認
-            if (response.IsSuccessStatusCode)
-            {
-                string responseBody = await response.Content.ReadAsStringAsync();
-
-                string message = responseBody == "API key set successfully" ? APIKeySuccessfullySet.Text : APIKeySettingFailed.Text;
-                ContentDialog dialog = new()
-                {
-                    XamlRoot = Content.XamlRoot,
-                    Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
-                    PrimaryButtonText = "OK",
-                    Content = message,
-                    DefaultButton = ContentDialogButton.Primary,
-                };
-                ContentDialogResult result = await dialog.ShowAsync();
-            }
-            else
-            {
-                ShowErrorDialog($"Error: {response.StatusCode} ({url})");
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowErrorDialog($"An exception has occurred: {ex.Message}");
-        }
+        // レジストリに書き込む
+        using RegistryKey key = Registry.CurrentUser.CreateSubKey(subKeyPath);
+        key?.SetValue("apiKey", apiKey, RegistryValueKind.String);
     }
 
     // <summary>
     // API キーを非同期に取得します。
     // </summary>
-    async Task<string> GetApiKeyAsync(int? port)
+    string GetApiKey()
     {
-        if (port == null)
-            return "";
+        // レジストリのパスを指定
+        string subKeyPath = @"SOFTWARE\Yukari";
 
-        using HttpClient client = new();
-        // ベースアドレスを設定
-        // APIエンドポイントのURL
-        string url = $"http://127.0.0.1:{port}/api/apikey";
-
-        try
-        {
-            // GETリクエストを送信
-            HttpResponseMessage response = await client.GetAsync(url);
-
-            // レスポンスのステータスコードを確認
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadAsStringAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            AddMessage($"An exception has occurred: {ex.Message}");
-        }
-        return "";
+        // レジストリから値を読み込む
+        using RegistryKey key = Registry.CurrentUser.OpenSubKey(subKeyPath);
+        return key?.GetValue("apiKey") as string;
     }
 
     // <summary>
@@ -297,7 +178,7 @@ public sealed partial class MainWindow : Window
     // </summary>
     async void ClickSetAPIKey(object sender, RoutedEventArgs e)
     {
-        string apiKey = await GetApiKeyAsync(apiEnginePort);
+        string apiKey = GetApiKey();
         ConfigAPIKey configAPIKey = new();
         configAPIKey.APIKeyBox.Password = apiKey;
 
@@ -316,12 +197,7 @@ public sealed partial class MainWindow : Window
         if (result == ContentDialogResult.Primary)
         {
             apiKey = configAPIKey.APIKeyBox.Password;
-            if (apiEnginePort == null)
-            {
-                ShowErrorDialog("The port number could not be detected. Please contact the developer.");
-                return;
-            }
-            SetUpAPIKey(apiKey, apiEnginePort);
+            SetUpAPIKey(apiKey);
         }
         else if (result == ContentDialogResult.Secondary)
         {
