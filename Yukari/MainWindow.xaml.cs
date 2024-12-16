@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.Json.Serialization;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -173,13 +174,64 @@ public sealed partial class MainWindow : Window
         tabView.SelectedItem = tabViewItem;
     }
 
-    // <summary>
-    // タブが閉じられるリクエストを処理します。
-    // </summary>
-    void TabView_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
+    /// <summary>
+    /// タブが閉じられるリクエストを処理します。
+    /// </summary>
+    void TabView_TabCloseRequested(object sender, TabViewTabCloseRequestedEventArgs e)
     {
-        sender.TabItems.Remove(args.Tab);
+        TabView tabView = sender as TabView;
+        TabViewItem tab = e.Tab;
+        int tabIndex = GetTabIndex(tabView, tab);
+        if (tabIndex < 0)
+        {
+            AddMessage("タブが見つかりませんでした。");
+            return;
+        }
+        HandleTabClose(tabView, tab, tabIndex);
     }
+
+    int GetTabIndex(TabView tabView, TabViewItem tab)
+    {
+        for (int i = 0; i < tabView.TabItems.Count; i++)
+            if (tabView.TabItems[i] as TabViewItem == tab)
+                return i;
+        return -1; // タブが見つからない場合のインデックス
+    }
+
+    void HandleTabClose(TabView tabView, TabViewItem tab, int tabIndex)
+    {
+        if (IsLastTab(tabView, tabIndex))
+        {
+            Close();
+            return;
+        }
+        UpdateSelectedIndexIfLast(tabView, tabIndex);
+        RemoveTab(tabView, tab);
+    }
+
+    bool IsLastTab(TabView tabView, int tabIndex)
+    {
+        return tabIndex == 0 && tabView.TabItems.Count == 1;
+    }
+
+    void UpdateSelectedIndexIfLast(TabView tabView, int tabIndex)
+    {
+        if (tabIndex == tabView.TabItems.Count - 1)
+            tabView.SelectedIndex = tabView.TabItems.Count - 2;
+    }
+
+    void RemoveTab(TabView tabView, TabViewItem tab)
+    {
+        try
+        {
+            tabView.TabItems.Remove(tab);
+        }
+        catch (Exception ex)
+        {
+            AddMessage(ex.Message);
+        }
+    }
+    /* タブを閉じる処理: ここまで */
 
     // <summary>
     // 新しいタブを作成します。
@@ -269,6 +321,22 @@ public sealed partial class MainWindow : Window
         {
             // タブのタイトルを取得
             client.ApplyHistory();
+        }
+    }
+
+    void ChatItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        ListView chatItems = sender as ListView;
+        if(chatItems != null){
+            // 選択されたアイテムを取得
+            if (chatItems.SelectedItem is HistoryItem historyItem)
+            {
+                (Tabs.SelectedItem as TabViewItem).Header = historyItem.HeadUser;
+                if((Tabs.SelectedItem as TabViewItem).Content is Client client)
+                {
+                    client.Print(historyItem);
+                }
+            }
         }
     }
 

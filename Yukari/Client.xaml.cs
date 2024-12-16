@@ -18,6 +18,18 @@ public class IPCData {
 
 public class Base64Decoder
 {
+    // UTF-8文字列をBase64エンコード
+    public static string EncodeToBase64UTF8(string plainText)
+    {
+        // UTF-8文字列をバイト配列に変換
+        byte[] bytes = Encoding.UTF8.GetBytes(plainText);
+
+        // Base64エンコード
+        string encodedString = Convert.ToBase64String(bytes);
+
+        return encodedString;
+    }
+
     public static string DecodeBase64UTF8(string encoded)
     {
         // Base64デコード
@@ -121,5 +133,13 @@ public sealed partial class Client : Page
     {
         // 改行コードで分割し、最初の行を取得し、トリミング
         return text.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+    }
+
+    public async void Print(HistoryItem historyItem)
+    {
+        string userBase64 = Base64Decoder.EncodeToBase64UTF8(historyItem.User);
+        string assistantBase64 = Base64Decoder.EncodeToBase64UTF8(historyItem.Assistant);
+        _ = await WebUI.ExecuteScriptAsync($"window.setEditorBase64(\"{userBase64}\")");
+        _ = await WebUI.ExecuteScriptAsync($"window.setOutputBase64(\"{assistantBase64}\")");
     }
 }
