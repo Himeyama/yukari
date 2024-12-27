@@ -7,7 +7,7 @@
   <data name="Help.Title" xml:space="preserve"><value>Help</value></data>
   <data name="About.Text" xml:space="preserve"><value>About the Yukari</value></data>
   <data name="AppTitleText.Text" xml:space="preserve"><value>Yukari</value></data>
-  <data name="NewTab.Text" xml:space="preserve"><value>New instance</value></data>
+  <data name="NewTab.Text" xml:space="preserve"><value>New tab</value></data>
   <data name="Error.Text" xml:space="preserve"><value>Error</value></data>
   <data name="SetAPIKey.Text" xml:space="preserve"><value>Set up the OpenAI API Key</value></data>
   <data name="Cancel.Text" xml:space="preserve"><value>Cancel</value></data>
@@ -15,4 +15,5 @@
   <data name="APIKeySettingFailed.Text" xml:space="preserve"><value>The API key setting has failed.</value></data>
   <data name="History.Text" xml:space="preserve"><value>History</value></data>
   <data name="LanguageModel.Text" xml:space="preserve"><value>Language model</value></data>
+  <data name="SelectLangModel.Text" xml:space="preserve"><value>Select a language model</value></data>
 </root>

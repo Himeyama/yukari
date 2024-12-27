@@ -72,14 +72,16 @@ public sealed partial class Client : Page
 
     string GetLanguageModel()
     {
-        LanguageModelItem languageModelItem;
-        try
-        {
-            languageModelItem = mainWindow.SelectLanguageModel.SelectedItem as LanguageModelItem;
-        }
-        catch (Exception)
-        {
-            return "unset";
+        string displayName = mainWindow.LanguageModel.Text;
+        LanguageModelItem languageModelItem = null;
+        foreach (KeyValuePair<string, string> model in mainWindow.languageModels){
+            if(displayName == model.Value){
+                languageModelItem = new(){
+                    Name = model.Key,
+                    DisplayName = model.Value
+                };
+                break;
+            }
         }
         return languageModelItem.Name;
     }

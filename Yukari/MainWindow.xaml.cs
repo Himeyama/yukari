@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Reflection.Metadata.Ecma335;
 using System.Text.Json.Serialization;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -38,6 +37,17 @@ public class HistoryItem
 
 public sealed partial class MainWindow : Window
 {
+    public readonly Dictionary<string, string> languageModels = new()
+    {
+        { "gpt-4o", "GPT-4o" },
+        { "gpt-4o-mini", "GPT-4o mini" },
+        { "chatgpt-4o-latest", "GPT-4o latest" },
+        { "o1-mini", "o1-mini" },
+        { "o1-preview", "o1-preview" },
+        { "gpt-4", "GPT-4" },
+        { "gpt-4-turbo", "GPT-4o turbo" }
+    };
+
     public MainWindow()
     {
         InitializeComponent();
@@ -51,39 +61,12 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
 
-        PopulateLanguageModelItems();
-        SelectLanguageModel.SelectedIndex = 1;
-
-        // ChatItems.Items.Add("This is a chat item");
-    }
-
-    void AddLanguageModelItem(string name, string displayName)
-    {
-        SelectLanguageModel.Items.Add(new LanguageModelItem()
+        string model = GetModel();
+        if (model == string.Empty)
         {
-            Name = name,
-            DisplayName = displayName,
-        });
-    }
-
-    void PopulateLanguageModelItems()
-    {
-        Dictionary<string, string> languageModels = new()
-        {
-            { "gpt-4o", "GPT-4o" },
-            { "gpt-4o-mini", "GPT-4o mini" },
-            { "chatgpt-4o-latest", "GPT-4o latest" },
-            { "o1-mini", "o1-mini" },
-            { "o1-preview", "o1-preview" },
-            { "gpt-4", "GPT-4" },
-            { "gpt-4-turbo", "GPT-4o turbo" },
-            { "gpt-4-32k", "GPT-4 32k" },
-        };
-
-        foreach(KeyValuePair<string, string> model in languageModels)
-        {
-            AddLanguageModelItem(model.Key, model.Value);
+            model = "GPT-4o mini";
         }
+        SetModel(model);
     }
 
     // <summary>
@@ -354,5 +337,79 @@ public sealed partial class MainWindow : Window
     void ClickExit(object sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    async void SelectModel(object sender, RoutedEventArgs e)
+    {
+        StackPanel content = new();
+        foreach (KeyValuePair<string, string> model in languageModels)
+        {
+            content.Children.Add(new RadioButton
+            {
+                Content = model.Value,
+                IsChecked = model.Value == GetModel()
+            });
+        }
+
+        ContentDialog dialog = new()
+        {
+            XamlRoot = Content.XamlRoot,
+            Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
+            PrimaryButtonText = "OK",
+            SecondaryButtonText = Cancel.Text,
+            Title = SelectLangModel.Text,
+            DefaultButton = ContentDialogButton.Primary,
+            Content = content
+        };
+        ContentDialogResult result = await dialog.ShowAsync();
+
+        if (result == ContentDialogResult.Primary)
+        {
+            foreach (RadioButton radioButton in content.Children.Cast<RadioButton>())
+            {
+                if (radioButton.IsChecked == true)
+                {
+                    SetModel(radioButton.Content.ToString());
+                    break;
+                }
+            }
+        }
+        else if (result == ContentDialogResult.Secondary)
+        {
+            // 何もしない
+        }
+    }
+
+    // <summary>
+    // API キーを設定します。
+    // </summary>
+    void SetModel(string modelName)
+    {
+        string subKeyPath = @"SOFTWARE\Yukari";
+        // レジストリに書き込む
+        using RegistryKey key = Registry.CurrentUser.CreateSubKey(subKeyPath);
+        if(key != null){
+            try{
+                key.SetValue("modelName", modelName ?? "GPT-4o mini", RegistryValueKind.String);
+            }catch(Exception ex){
+                AddMessage(ex.Message);
+            }
+            LanguageModel.Text = modelName ?? "GPT-4o mini";
+        }
+    }
+
+    // <summary>
+    // API キーを取得します。
+    // </summary>
+    static string GetModel()
+    {
+        // レジストリのパスを指定
+        string subKeyPath = @"SOFTWARE\Yukari";
+        // レジストリから値を読み込む
+        using RegistryKey key = Registry.CurrentUser.OpenSubKey(subKeyPath);
+        // key が存在しない場合、空文字列を返す
+        if (key == null)
+            return string.Empty;
+        return key?.GetValue("modelName") as string;
     }
 }

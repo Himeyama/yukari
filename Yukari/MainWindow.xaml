@@ -36,18 +36,9 @@
         </Grid>
 
         <Grid Grid.Row="1" ColumnDefinitions="Auto, *">
-            <Grid Grid.Column="0" Width="300" Margin="8, 8, 8, 8" RowDefinitions="Auto, Auto, Auto, *">
-                <TextBlock Text="Language model" x:Uid="LanguageModel" Margin="8, 0, 8, 0" FontWeight="Bold" FontSize="16" Grid.Row="0" />
-                <ComboBox x:FieldModifier="Public" Margin="4, 8, 4, 0" Grid.Row="1" HorizontalAlignment="Stretch" Name="SelectLanguageModel" >
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate x:DataType="local:LanguageModelItem">
-                            <TextBlock Text="{x:Bind DisplayName}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-
-                <TextBlock Text="History" x:Uid="History" Margin="8, 16, 8, 0" FontWeight="Bold" FontSize="16" Grid.Row="2" />
-                <Grid Grid.Row="3" Margin="0, 8, 0, 0">
+            <Grid Grid.Column="0" Width="300" Margin="8, 8, 8, 8" RowDefinitions="Auto, *">
+                <TextBlock Text="History" x:Uid="History" Margin="8, 0, 8, 0" FontWeight="Bold" FontSize="16" Grid.Row="0" />
+                <Grid Grid.Row="1" Margin="0, 8, 0, 0">
                     <ScrollViewer>
                         <ListView Name="ChatItems" x:FieldModifier="Public" SelectionChanged="ChatItems_SelectionChanged">
                             <ListView.ItemTemplate>
@@ -67,15 +58,19 @@
         </Grid>
 
         <Grid Grid.Row="2">
-            <Grid>
-                <TextBlock Grid.Column="0" Text="" x:Name="StatusBar" Margin="8, 0, 0, 0"
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBlock Grid.Column="0" x:Name="StatusBar" Margin="8, 0, 0, 0"
                     FontSize="12" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Click="SelectModel" FontSize="12" Padding="6, 2, 6, 2" Background="Transparent" BorderBrush="Transparent" Margin="0, 0, 8, 0">
+                    <TextBlock x:FieldModifier="Public" Name="LanguageModel" Text="Model" />
+                </Button>
             </Grid>
         </Grid>
 
         <Grid Visibility="Collapsed">
             <TextBlock x:Uid="NewTab" Name="NewTab" />
             <TextBlock x:Uid="Cancel" Name="Cancel" />
+            <TextBlock x:Uid="SelectLangModel" Name="SelectLangModel" />
             <TextBlock x:Uid="APIKeySuccessfullySet" Name="APIKeySuccessfullySet" />
             <TextBlock x:Uid="APIKeySettingFailed" Name="APIKeySettingFailed" />
         </Grid>
