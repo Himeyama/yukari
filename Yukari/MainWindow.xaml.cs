@@ -1,5 +1,7 @@
+#nullable enable
 using System.Diagnostics;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
@@ -13,26 +15,26 @@ namespace Yukari;
 public class ApiKeyRequest
 {
     [JsonPropertyName("apikey")]
-    public string Apikey { get; set; }
+    public string? Apikey { get; set; }
 }
 
 public class LanguageModelItem {
-    public string Name { get; set;}
-    public string DisplayName { get; set;}
+    public string? Name { get; set;}
+    public string? DisplayName { get; set;}
 }
 
 public class HistoryItem
 {
     [JsonPropertyName("user")]
-    public string User { get; set; }
+    public string? User { get; set; }
     [JsonPropertyName("assistant")]
-    public string Assistant { get; set; }
+    public string? Assistant { get; set; }
     [JsonPropertyName("headuser")]
-    public string HeadUser { get; set; }
+    public string? HeadUser { get; set; }
     [JsonPropertyName("headassistant")]
-    public string HeadAssistant { get; set; }
+    public string? HeadAssistant { get; set; }
     [JsonPropertyName("uuid")]
-    public string Uuid { get; set; }
+    public string? Uuid { get; set; }
 }
 
 public sealed partial class MainWindow : Window
@@ -67,6 +69,46 @@ public sealed partial class MainWindow : Window
             model = "GPT-4o mini";
         }
         SetModel(model);
+
+        InitVoicevox();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public async void InitVoicevox()
+    {
+        VOICEVOX.mainWindow = this;
+        string? voicevoxVersion = await VOICEVOX.GetVersion();
+        VoicevoxButton.Visibility = Visibility.Visible;
+        if(voicevoxVersion == null){
+            VoicevoxButtonText.Text = "VOICEVOX を起動する";
+            return;
+        }
+        VoicevoxButtonText.Text = "VOICEVOX " + voicevoxVersion;
+    }
+
+    async void SelectVoicevox(object sender, RoutedEventArgs e)
+    {
+        string pattern = @"^VOICEVOX \d+\.";
+        string version = VoicevoxButtonText.Text;
+        if (Regex.IsMatch(version, pattern))
+        {
+            string? ver = await VOICEVOX.GetVersion();
+            if (ver == null)
+            {
+                VoicevoxButtonText.Text = "VOICEVOX を起動する";
+                AddMessage("VOICEVOX が起動していません");
+                return;
+            }
+            
+        }
+        else
+        {
+            // 起動
+            VOICEVOX.LaunchVoicevox();
+        }
     }
 
     // <summary>
@@ -140,10 +182,13 @@ public sealed partial class MainWindow : Window
     // </summary>
     void TabView_Loaded(object sender, RoutedEventArgs e)
     {
-        TabView tabView = sender as TabView;
+        TabView? tabView = sender as TabView;
         TabViewItem tabViewItem = CreateNewTab();
-        tabView.TabItems.Add(tabViewItem);
-        tabView.SelectedItem = tabViewItem;
+        tabView?.TabItems.Add(tabViewItem);
+        if (tabView != null)
+        {
+            tabView.SelectedItem = tabViewItem;
+        }
     }
 
     // <summary>
@@ -162,7 +207,10 @@ public sealed partial class MainWindow : Window
     /// </summary>
     void TabView_TabCloseRequested(object sender, TabViewTabCloseRequestedEventArgs e)
     {
-        TabView tabView = sender as TabView;
+        if (sender is not TabView tabView)
+        {
+            return;
+        }
         TabViewItem tab = e.Tab;
         int tabIndex = GetTabIndex(tabView, tab);
         if (tabIndex < 0)
@@ -258,8 +306,8 @@ public sealed partial class MainWindow : Window
         string subKeyPath = @"SOFTWARE\Yukari";
 
         // レジストリから値を読み込む
-        using RegistryKey key = Registry.CurrentUser.OpenSubKey(subKeyPath);
-        return key?.GetValue("apiKey") as string;
+        using RegistryKey? key = Registry.CurrentUser.OpenSubKey(subKeyPath);
+        return key?.GetValue("apiKey") as string ?? string.Empty;
     }
 
     // <summary>
@@ -296,8 +344,15 @@ public sealed partial class MainWindow : Window
 
     void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        TabView tabs = sender as TabView;
-        TabViewItem tabViewItem = tabs.SelectedItem as TabViewItem;
+        if (sender is not TabView tabs)
+        {
+            return;
+        }
+        TabViewItem? tabViewItem = tabs.SelectedItem as TabViewItem;
+        if (tabViewItem == null)
+        {
+            return;
+        }
 
         // 選択されたタブに基づいて関数を実行
         if (tabViewItem.Content is Client client)
@@ -309,13 +364,18 @@ public sealed partial class MainWindow : Window
 
     void ChatItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        ListView chatItems = sender as ListView;
-        if(chatItems != null){
+        if (sender is ListView chatItems)
+        {
             // 選択されたアイテムを取得
             if (chatItems.SelectedItem is HistoryItem historyItem)
             {
-                (Tabs.SelectedItem as TabViewItem).Header = historyItem.HeadUser;
-                if((Tabs.SelectedItem as TabViewItem).Content is Client client)
+                TabViewItem? tabViewItem = Tabs.SelectedItem as TabViewItem;
+                if (tabViewItem == null)
+                {
+                    return;
+                }
+                tabViewItem.Header = historyItem.HeadUser;
+                if(tabViewItem.Content is Client client)
                 {
                     client.Print(historyItem);
                 }
@@ -369,7 +429,10 @@ public sealed partial class MainWindow : Window
             {
                 if (radioButton.IsChecked == true)
                 {
-                    SetModel(radioButton.Content.ToString());
+                    if (radioButton.Content != null)
+                    {
+                        SetModel(radioButton.Content?.ToString() ?? "DefaultModelName");
+                    }
                     break;
                 }
             }
@@ -406,10 +469,10 @@ public sealed partial class MainWindow : Window
         // レジストリのパスを指定
         string subKeyPath = @"SOFTWARE\Yukari";
         // レジストリから値を読み込む
-        using RegistryKey key = Registry.CurrentUser.OpenSubKey(subKeyPath);
+        using RegistryKey? key = Registry.CurrentUser.OpenSubKey(subKeyPath);
         // key が存在しない場合、空文字列を返す
         if (key == null)
             return string.Empty;
-        return key?.GetValue("modelName") as string;
+        return key?.GetValue("modelName") as string ?? string.Empty;
     }
 }

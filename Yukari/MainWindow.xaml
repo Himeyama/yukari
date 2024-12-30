@@ -58,10 +58,13 @@
         </Grid>
 
         <Grid Grid.Row="2">
-            <Grid ColumnDefinitions="*, Auto">
+            <Grid ColumnDefinitions="*, Auto, Auto">
                 <TextBlock Grid.Column="0" x:Name="StatusBar" Margin="8, 0, 0, 0"
                     FontSize="12" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Click="SelectModel" FontSize="12" Padding="6, 2, 6, 2" Background="Transparent" BorderBrush="Transparent" Margin="0, 0, 8, 0">
+                <Button Grid.Column="1" Click="SelectVoicevox" Name="VoicevoxButton" Visibility="Collapsed" FontSize="12" Padding="6, 2, 6, 2" Background="Transparent" BorderBrush="Transparent" Margin="0, 0, 8, 0">
+                    <TextBlock x:FieldModifier="Public" Name="VoicevoxButtonText" Text="" />
+                </Button>
+                <Button Grid.Column="2" Click="SelectModel" FontSize="12" Padding="6, 2, 6, 2" Background="Transparent" BorderBrush="Transparent" Margin="0, 0, 8, 0">
                     <TextBlock x:FieldModifier="Public" Name="LanguageModel" Text="Model" />
                 </Button>
             </Grid>
