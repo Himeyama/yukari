@@ -120,6 +120,11 @@ public sealed partial class Client : Page
             history.HeadAssistant = GetFirstLine(history.Assistant);
             historyItems.Add(history);
             mainWindow.ChatItems.Items.Insert(0, history);
+        }else if(iPCData.Type == "get-assistant"){
+            string assistantEncoded = iPCData.Data;
+            string assistant = Base64Decoder.DecodeBase64UTF8(assistantEncoded);
+            mainWindow.AddMessage(assistant);
+            VOICEVOX.GenerateVoice(assistant);
         }
     }
 
@@ -143,5 +148,10 @@ public sealed partial class Client : Page
         string assistantBase64 = Base64Decoder.EncodeToBase64UTF8(historyItem.Assistant);
         _ = await WebUI.ExecuteScriptAsync($"window.setEditorBase64(\"{userBase64}\")");
         _ = await WebUI.ExecuteScriptAsync($"window.setOutputBase64(\"{assistantBase64}\")");
+    }
+
+    public async void VoicevoxReading()
+    {
+        await WebUI.ExecuteScriptAsync("window.getAssistant()");
     }
 }

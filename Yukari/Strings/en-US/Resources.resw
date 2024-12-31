@@ -16,4 +16,8 @@
   <data name="History.Text" xml:space="preserve"><value>History</value></data>
   <data name="LanguageModel.Text" xml:space="preserve"><value>Language model</value></data>
   <data name="SelectLangModel.Text" xml:space="preserve"><value>Select a language model</value></data>
+  <data name="SelectVoicevoxSpeaker.Text" xml:space="preserve"><value>Select a speaker</value></data>
+  <data name="SelectVoicevoxStyle.Text" xml:space="preserve"><value>Select a style</value></data>
+  <data name="Next.Text" xml:space="preserve"><value>Next</value></data>
+  <data name="VoicevoxReading.Text" xml:space="preserve"><value>Reading</value></data>
 </root>

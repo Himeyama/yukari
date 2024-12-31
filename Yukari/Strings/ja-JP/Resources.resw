@@ -16,4 +16,8 @@
   <data name="History.Text" xml:space="preserve"><value>履歴</value></data>
   <data name="LanguageModel.Text" xml:space="preserve"><value>言語モデル</value></data>
   <data name="SelectLangModel.Text" xml:space="preserve"><value>言語モデルの選択</value></data>
+  <data name="SelectVoicevoxSpeaker.Text" xml:space="preserve"><value>キャラクターの選択</value></data>
+  <data name="SelectVoicevoxStyle.Text" xml:space="preserve"><value>スタイルの選択</value></data>
+  <data name="Next.Text" xml:space="preserve"><value>次へ</value></data>
+  <data name="VoicevoxReading.Text" xml:space="preserve"><value>読み上げ</value></data>
 </root>

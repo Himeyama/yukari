@@ -36,9 +36,18 @@
         </Grid>
 
         <Grid Grid.Row="1" ColumnDefinitions="Auto, *">
-            <Grid Grid.Column="0" Width="300" Margin="8, 8, 8, 8" RowDefinitions="Auto, *">
-                <TextBlock Text="History" x:Uid="History" Margin="8, 0, 8, 0" FontWeight="Bold" FontSize="16" Grid.Row="0" />
-                <Grid Grid.Row="1" Margin="0, 8, 0, 0">
+            <Grid Grid.Column="0" Width="300" Margin="8, 8, 8, 8" RowDefinitions="Auto, Auto, *">
+                <!-- 読み上げボタン -->
+                <Button Grid.Row="0" Click="ClickVoicevoxReading" Name="VoicevoxReadingButton" Visibility="Collapsed" Margin="0, 0, 0, 0" HorizontalAlignment="Stretch">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Glyph="&#xE13D;" Margin="0, 0, 8, 0" />
+                        <TextBlock x:FieldModifier="Public" Name="VoicevoxReading" x:Uid="VoicevoxReading" />
+                    </StackPanel>
+                </Button>
+
+                <!-- 履歴 -->
+                <TextBlock Text="History" x:Uid="History" Margin="8, 8, 8, 0" FontWeight="Bold" FontSize="16" Grid.Row="1" />
+                <Grid Grid.Row="2" Margin="0, 8, 0, 0">
                     <ScrollViewer>
                         <ListView Name="ChatItems" x:FieldModifier="Public" SelectionChanged="ChatItems_SelectionChanged">
                             <ListView.ItemTemplate>
@@ -60,7 +69,7 @@
         <Grid Grid.Row="2">
             <Grid ColumnDefinitions="*, Auto, Auto">
                 <TextBlock Grid.Column="0" x:Name="StatusBar" Margin="8, 0, 0, 0"
-                    FontSize="12" VerticalAlignment="Center" />
+                    FontSize="12" VerticalAlignment="Center" TextTrimming="WordEllipsis" />
                 <Button Grid.Column="1" Click="SelectVoicevox" Name="VoicevoxButton" Visibility="Collapsed" FontSize="12" Padding="6, 2, 6, 2" Background="Transparent" BorderBrush="Transparent" Margin="0, 0, 8, 0">
                     <TextBlock x:FieldModifier="Public" Name="VoicevoxButtonText" Text="" />
                 </Button>
@@ -72,10 +81,13 @@
 
         <Grid Visibility="Collapsed">
             <TextBlock x:Uid="NewTab" Name="NewTab" />
-            <TextBlock x:Uid="Cancel" Name="Cancel" />
+            <TextBlock x:Uid="Cancel" Name="Cancel" x:FieldModifier="Public" />
             <TextBlock x:Uid="SelectLangModel" Name="SelectLangModel" />
             <TextBlock x:Uid="APIKeySuccessfullySet" Name="APIKeySuccessfullySet" />
             <TextBlock x:Uid="APIKeySettingFailed" Name="APIKeySettingFailed" />
+            <TextBlock x:Uid="SelectVoicevoxSpeaker" Name="SelectVoicevoxSpeaker" x:FieldModifier="Public" />
+            <TextBlock x:Uid="SelectVoicevoxStyle" Name="SelectVoicevoxStyle" x:FieldModifier="Public" />
+            <TextBlock x:Uid="Next" Name="Next" x:FieldModifier="Public" />
         </Grid>
     </Grid>
 </Window>

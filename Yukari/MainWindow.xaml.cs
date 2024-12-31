@@ -87,13 +87,21 @@ public sealed partial class MainWindow : Window
             return;
         }
         VoicevoxButtonText.Text = "VOICEVOX " + voicevoxVersion;
+        VoicevoxReadingButton.Visibility = Visibility.Visible;
+
+        string speaker = VOICEVOX.GetSpeaker();
+        string style = VOICEVOX.GetStyle();
+        if(speaker != string.Empty && style != string.Empty){
+            VoicevoxButtonText.Text = $"VOICEVOX: {speaker} ({style})";
+        }
     }
 
     async void SelectVoicevox(object sender, RoutedEventArgs e)
     {
-        string pattern = @"^VOICEVOX \d+\.";
+        string pattern1 = @"^VOICEVOX \d+\.";
+        string pattern2 = @"^VOICEVOX: ";
         string version = VoicevoxButtonText.Text;
-        if (Regex.IsMatch(version, pattern))
+        if (Regex.IsMatch(version, pattern1) || Regex.IsMatch(version, pattern2))
         {
             string? ver = await VOICEVOX.GetVersion();
             if (ver == null)
@@ -102,7 +110,7 @@ public sealed partial class MainWindow : Window
                 AddMessage("VOICEVOX が起動していません");
                 return;
             }
-            
+            _ = await VOICEVOX.SelectSpeaker();
         }
         else
         {
@@ -474,5 +482,18 @@ public sealed partial class MainWindow : Window
         if (key == null)
             return string.Empty;
         return key?.GetValue("modelName") as string ?? string.Empty;
+    }
+
+    void ClickVoicevoxReading(object sender, RoutedEventArgs e)
+    {
+        TabViewItem? tabViewItem = Tabs.SelectedItem as TabViewItem;
+        if (tabViewItem == null)
+        {
+            return;
+        }
+        if (tabViewItem.Content is Client client)
+        {
+            client.VoicevoxReading();
+        }
     }
 }
