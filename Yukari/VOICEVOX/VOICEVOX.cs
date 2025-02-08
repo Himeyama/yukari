@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.UI.Xaml;
+using System.Media;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Win32;
 using Windows.ApplicationModel.Appointments.AppointmentsProvider;
@@ -441,7 +442,7 @@ public class VOICEVOX
         return key?.GetValue("voicevoxStyle") as string ?? string.Empty;
     }
 
-    static string ComputeSha256Hash(string rawData)
+    public static string ComputeSha256Hash(string rawData)
     {
         // SHA256 ハッシュ オブジェクトを作成
         using SHA256 sha256Hash = SHA256.Create();
@@ -457,7 +458,7 @@ public class VOICEVOX
         return builder.ToString();
     }
 
-    static async Task<int?> GetSpeakerId()
+    public static async Task<int?> GetSpeakerId()
     {
         string speakerName = GetSpeaker();
         string styleName = GetStyle();
@@ -518,7 +519,7 @@ public class VOICEVOX
     static async Task<string?> GetAudioQuery(string text)
     {
         string textUriEncoded = Uri.EscapeDataString(text);
-        string speakerId = $"{await GetSpeakerId()}" ?? "1";
+        string speakerId = $"{await GetSpeakerId() ?? 1}";
         string url = $"http://127.0.0.1:50021/audio_query?text={textUriEncoded}&speaker={speakerId}";
 
         HttpClientHandler handler = new()
@@ -549,50 +550,84 @@ public class VOICEVOX
         return null;
     }
 
-    public static async void GenerateVoice(string text){
-        if(mainWindow == null){
-            return;
+    public static async Task<bool> GenerateVoice(string text)
+    {
+        string id = $"{await GetSpeakerId() ?? 1}";
+        string sha256Hash = ComputeSha256Hash(text);
+        string tempPath = Path.Combine(Path.GetTempPath(), $"{sha256Hash}-{id}.wav");
+        if(File.Exists(tempPath))
+            return true;
+
+        if (mainWindow == null)
+        {
+            return false;
         }
 
-        if(GetVersion() == null){
+        if (await GetVersion() == null)
+        {
             mainWindow?.AddMessage("VOICEVOX が起動していません。");
-            return;
+            return false;
         }
-        string sha256Hash = ComputeSha256Hash(text);
 
         string? json = await GetAudioQuery(text);
-        if(json == null){
+        if (json == null)
+        {
             mainWindow.AddMessage("音声生成情報の取得に失敗しました。");
-            return;
+            return false;
         }
 
-        // HTTP POSTリクエストの設定
+        byte[]? audioData = await SynthesizeVoice(json);
+        if (audioData == null)
+        {
+            mainWindow.AddMessage("音声の生成に失敗しました。");
+            return false;
+        }
+        File.WriteAllBytes(tempPath, audioData);
+        mainWindow.AddMessage($"音声が生成され、{tempPath} として保存されました。");
+        return true;
+    }
+
+    static async Task<byte[]?> SynthesizeVoice(string json)
+    {
+        string id = $"{await GetSpeakerId()}" ?? "1";
+        string uri = $"http://127.0.0.1:50021/synthesis?speaker={id}&enable_interrogative_upspeak=false";
+
         StringContent content = new(json, Encoding.UTF8, "application/json");
-        HttpClientHandler handler = new(){
+        HttpClientHandler handler = new()
+        {
             UseProxy = false
         };
+
         using HttpClient httpClient = new(handler);
-        // ヘッダーの設定
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("audio/wav"));
-        string id = $"{await GetSpeakerId()}" ?? "1";
-        // HttpResponseMessage response = await httpClient.PostAsync($"http://127.0.0.1:50021/synthesis?speaker={id}&enable_interrogative_upspeak=true", content);
-        string uri = $"http://127.0.0.1:50021/synthesis?speaker={id}&enable_interrogative_upspeak=false";
 
         try
         {
-            // POSTリクエストの送信
             HttpResponseMessage response = await httpClient.PostAsync(uri, content);
             response.EnsureSuccessStatusCode();
-
-            // 音声データを受け取る
-            byte[] audioData = await response.Content.ReadAsByteArrayAsync();
-            string tempPath = Path.Combine(Path.GetTempPath(), $"{sha256Hash}.wav");
-            File.WriteAllBytes(tempPath, audioData);
-            mainWindow.AddMessage($"音声が生成され、{tempPath} として保存されました。");
+            return await response.Content.ReadAsByteArrayAsync();
         }
         catch (Exception ex)
         {
-            mainWindow.AddMessage($"エラー：{ex.Message}");
+            mainWindow?.AddMessage($"エラー：{ex.Message}");
+            return null;
         }
+    }
+
+    public static async Task PlayWavAsync(string path)
+    {
+        if(!File.Exists(path)){
+            mainWindow?.AddMessage("音声ファイルが見つかりません。");
+            return;
+        }
+        await Task.Run(() =>
+        {
+            // SoundPlayerクラスのインスタンスを作成
+            using SoundPlayer player = new(path);
+            // WAVファイルを読み込む
+            player.Load();
+            // 音声の再生
+            player.PlaySync(); // このメソッドは再生が完了するのを待ちます
+        });
     }
 }

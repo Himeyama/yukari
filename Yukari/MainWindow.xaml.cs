@@ -1,7 +1,11 @@
 #nullable enable
 using System.Diagnostics;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using System.Text.Unicode;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
@@ -35,6 +39,13 @@ public class HistoryItem
     public string? HeadAssistant { get; set; }
     [JsonPropertyName("uuid")]
     public string? Uuid { get; set; }
+}
+
+public class Record
+{
+    public List<HistoryItem>? Histories { get; set; }
+    public int ActiveIdx { get; set; }
+    public string? Header { get; set; }
 }
 
 public sealed partial class MainWindow : Window
@@ -190,12 +201,15 @@ public sealed partial class MainWindow : Window
     // </summary>
     void TabView_Loaded(object sender, RoutedEventArgs e)
     {
+        Load();
         TabView? tabView = sender as TabView;
-        TabViewItem tabViewItem = CreateNewTab();
-        tabView?.TabItems.Add(tabViewItem);
-        if (tabView != null)
-        {
-            tabView.SelectedItem = tabViewItem;
+        if(tabView == null)
+            return;
+        if(tabView.TabItems.Count == 0){
+            TabViewItem tabViewItem = CreateNewTab();
+            tabView?.TabItems.Add(tabViewItem);
+            if (tabView != null)
+                tabView.SelectedItem = tabViewItem;
         }
     }
 
@@ -241,11 +255,13 @@ public sealed partial class MainWindow : Window
     {
         if (IsLastTab(tabView, tabIndex))
         {
+            SaveReset();
             Close();
             return;
         }
         UpdateSelectedIndexIfLast(tabView, tabIndex);
         RemoveTab(tabView, tab);
+        Save();
     }
 
     bool IsLastTab(TabView tabView, int tabIndex)
@@ -367,6 +383,7 @@ public sealed partial class MainWindow : Window
         {
             // タブのタイトルを取得
             client.ApplyHistory();
+            ChatItems.SelectedIndex = client.activeIdx;
         }
     }
 
@@ -385,7 +402,9 @@ public sealed partial class MainWindow : Window
                 tabViewItem.Header = historyItem.HeadUser;
                 if(tabViewItem.Content is Client client)
                 {
+                    client.activeIdx = chatItems.SelectedIndex;
                     client.Print(historyItem);
+                    Save();
                 }
             }
         }
@@ -495,5 +514,82 @@ public sealed partial class MainWindow : Window
         {
             client.VoicevoxReading();
         }
+    }
+
+    public void Load()
+    {
+        string historiesPath = GetHistoriesPath();
+        if(!File.Exists(historiesPath))
+            return;
+        
+        string json = File.ReadAllText(historiesPath);
+
+        List<Record>? records = JsonSerializer.Deserialize<List<Record>>(json);
+        if(records == null)
+            return;
+        
+        foreach(Record record in records){
+            TabViewItem tabViewItem = CreateNewTab();
+            Tabs.TabItems.Add(tabViewItem);
+            if(tabViewItem.Content is Client client)
+            {
+                client.activeIdx = record.ActiveIdx;
+                client.historyItems = record.Histories;
+            }
+            tabViewItem.Header = record.Header;
+        }
+    }
+
+    public void Save()
+    {
+        // 各タブを走査して、情報を集める
+        List<Record> records = new();
+        foreach(TabViewItem tabItem in Tabs.TabItems)
+        {
+            if(tabItem.Content is Client client)
+            {
+                Record record = new(){
+                    Header = tabItem.Header as string,
+                    ActiveIdx = client.activeIdx,
+                    Histories = client.historyItems
+                };
+
+                if (record.Histories.Count != 0)
+                    records.Add(record);
+            }
+        }
+        JsonSerializerOptions options = new()
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            WriteIndented = true  // インデントを有効にする
+        };
+        string json = JsonSerializer.Serialize(records, options);
+
+        // 保存
+        string historiesPath = GetHistoriesPath();
+        File.WriteAllText(historiesPath, json, Encoding.UTF8);
+    }
+
+    public void SaveReset()
+    {
+        // 各タブを走査して、情報を集める
+        List<Record> records = new();
+        string json = JsonSerializer.Serialize(records);
+        // 保存
+        string historiesPath = GetHistoriesPath();
+        File.WriteAllText(historiesPath, json, Encoding.UTF8);
+    }
+
+    string GetHistoriesPath()
+    {
+        string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        string yukariPath = Path.Join(documentsPath, ".yukari");
+        if(!File.Exists(yukariPath))
+        {
+            Directory.CreateDirectory(yukariPath);
+            File.SetAttributes(yukariPath, File.GetAttributes(yukariPath) | FileAttributes.Hidden);
+        }
+        string historiesPath = Path.Join(yukariPath, "records.json");
+        return historiesPath;
     }
 }

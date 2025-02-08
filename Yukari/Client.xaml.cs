@@ -47,7 +47,8 @@ public sealed partial class Client : Page
     MainWindow mainWindow = null;
     public TabViewItem tabViewItem = null;
 
-    List<HistoryItem> historyItems = [];
+    public List<HistoryItem> historyItems = [];
+    public int activeIdx = -1;
 
     public Client(MainWindow mainWindow){
         InitializeComponent();
@@ -120,11 +121,25 @@ public sealed partial class Client : Page
             history.HeadAssistant = GetFirstLine(history.Assistant);
             historyItems.Add(history);
             mainWindow.ChatItems.Items.Insert(0, history);
+            mainWindow.Save();
         }else if(iPCData.Type == "get-assistant"){
             string assistantEncoded = iPCData.Data;
             string assistant = Base64Decoder.DecodeBase64UTF8(assistantEncoded);
-            mainWindow.AddMessage(assistant);
-            VOICEVOX.GenerateVoice(assistant);
+
+            /* VOICEVOX の処理 */
+            // 分割文字を設定
+            char[] separators = ['？', '！', '、', '。', '\n'];
+            // 文字列を分割
+            List<string> assistants = new(assistant.Split(separators, StringSplitOptions.RemoveEmptyEntries));
+            foreach (string assis in assistants)
+            {
+                // 音声合成
+                await VOICEVOX.GenerateVoice(assis);
+                string id = $"{await VOICEVOX.GetSpeakerId() ?? 1}";
+                string sha256Hash = VOICEVOX.ComputeSha256Hash(assis);
+                string wavPath = Path.Combine(Path.GetTempPath(), $"{sha256Hash}-{id}.wav");
+                await VOICEVOX.PlayWavAsync(wavPath);   
+            }
         }
     }
 
