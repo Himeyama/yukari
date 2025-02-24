@@ -74,17 +74,18 @@ public sealed partial class Client : Page
     string GetLanguageModel()
     {
         string displayName = mainWindow.LanguageModel.Text;
-        LanguageModelItem languageModelItem = null;
-        foreach (KeyValuePair<string, string> model in mainWindow.languageModels){
-            if(displayName == model.Value){
-                languageModelItem = new(){
-                    Name = model.Key,
-                    DisplayName = model.Value
-                };
-                break;
-            }
-        }
-        return languageModelItem.Name;
+        // LanguageModelItem languageModelItem = null;
+        // foreach (KeyValuePair<string, string> model in mainWindow.languageModels){
+        //     if(displayName == model.Value){
+        //         languageModelItem = new(){
+        //             Name = model.Key,
+        //             DisplayName = model.Value
+        //         };
+        //         break;
+        //     }
+        // }
+        // return languageModelItem.Name;
+        return displayName;
     }
 
     async void initWebView(){
@@ -102,12 +103,19 @@ public sealed partial class Client : Page
         {
             tabViewItem.Header = Base64Decoder.DecodeBase64UTF8(iPCData.Data);
         }
-        else if (iPCData.Type == "get" && iPCData.Data == "apiKey")
+        else if (iPCData.Type == "get" && iPCData.Data == "openAIApiKey")
         {
-            string apiKey = MainWindow.GetApiKey();
+            string apiKey = MainWindow.GetOpenAIApiKey();
             if (apiKey == "")
                 apiKey = "unset";
-            _ = await WebUI.ExecuteScriptAsync($"window.setAPIKey(\"{apiKey}\")");
+            _ = await WebUI.ExecuteScriptAsync($"window.setOpenAIAPIKey(\"{apiKey}\")");
+        }
+        else if (iPCData.Type == "get" && iPCData.Data == "grokApiKey")
+        {
+            string apiKey = MainWindow.GetGrokApiKey();
+            if (apiKey == "")
+                apiKey = "unset";
+            _ = await WebUI.ExecuteScriptAsync($"window.setGrokAPIKey(\"{apiKey}\")");
         }
         else if (iPCData.Type == "get" && iPCData.Data == "languageModel")
         {

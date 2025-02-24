@@ -9,7 +9,8 @@
   <data name="AppTitleText.Text" xml:space="preserve"><value>Yukari</value></data>
   <data name="NewTab.Text" xml:space="preserve"><value>New tab</value></data>
   <data name="Error.Text" xml:space="preserve"><value>Error</value></data>
-  <data name="SetAPIKey.Text" xml:space="preserve"><value>Set up the OpenAI API Key</value></data>
+  <data name="SetOpenAIAPIKey.Text" xml:space="preserve"><value>Set up the OpenAI API Key</value></data>
+  <data name="SetGrokAPIKey.Text" xml:space="preserve"><value>Set up the Grok API Key</value></data>
   <data name="Cancel.Text" xml:space="preserve"><value>Cancel</value></data>
   <data name="APIKeySuccessfullySet.Text" xml:space="preserve"><value>API key has been successfully set.</value></data>
   <data name="APIKeySettingFailed.Text" xml:space="preserve"><value>The API key setting has failed.</value></data>
@@ -20,4 +21,5 @@
   <data name="SelectVoicevoxStyle.Text" xml:space="preserve"><value>Select a style</value></data>
   <data name="Next.Text" xml:space="preserve"><value>Next</value></data>
   <data name="VoicevoxReading.Text" xml:space="preserve"><value>Reading</value></data>
+  <data name="APIKeyIsNotSet.Text" xml:space="preserve"><value>API key is not set</value></data>
 </root>

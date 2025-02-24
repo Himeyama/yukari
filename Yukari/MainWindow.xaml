@@ -15,7 +15,8 @@
             <Grid ColumnDefinitions="Auto, *">
                 <MenuBar Grid.Column="0">
                     <MenuBarItem Title="File" x:Uid="File">
-                        <MenuFlyoutItem Text="Set up the OpenAI API key" x:Uid="SetAPIKey" Click="ClickSetAPIKey" Name="SetAPIKey" />
+                        <MenuFlyoutItem Text="Set up the OpenAI API key" x:Uid="SetOpenAIAPIKey" Click="ClickSetOpenAIAPIKey" Name="SetOpenAIAPIKey" />
+                        <MenuFlyoutItem Text="Set up the Grok API key" x:Uid="SetGrokAPIKey" Click="ClickSetGrokAPIKey" Name="SetGrokAPIKey" />
                         <MenuFlyoutItem Text="Exit" x:Uid="Exit" Click="ClickExit" />
                     </MenuBarItem>
 
@@ -88,6 +89,7 @@
             <TextBlock x:Uid="SelectVoicevoxSpeaker" Name="SelectVoicevoxSpeaker" x:FieldModifier="Public" />
             <TextBlock x:Uid="SelectVoicevoxStyle" Name="SelectVoicevoxStyle" x:FieldModifier="Public" />
             <TextBlock x:Uid="Next" Name="Next" x:FieldModifier="Public" />
+            <TextBlock x:Uid="APIKeyIsNotSet" Name="APIKeyIsNotSet" />
         </Grid>
     </Grid>
 </Window>

@@ -12,6 +12,11 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Win32;
+using OpenAI;
+using System.ClientModel;
+using OpenAI.Models;
+using Microsoft.UI.Text;
+using OpenAI.Chat;
 
 namespace Yukari;
 
@@ -50,16 +55,20 @@ public class Record
 
 public sealed partial class MainWindow : Window
 {
-    public readonly Dictionary<string, string> languageModels = new()
-    {
-        { "gpt-4o", "GPT-4o" },
-        { "gpt-4o-mini", "GPT-4o mini" },
-        { "chatgpt-4o-latest", "GPT-4o latest" },
-        { "o1-mini", "o1-mini" },
-        { "o1-preview", "o1-preview" },
-        { "gpt-4", "GPT-4" },
-        { "gpt-4-turbo", "GPT-4o turbo" }
-    };
+    // public readonly Dictionary<string, string> languageModels = new()
+    // {
+    //     { "gpt-4o", "GPT-4o" },
+    //     { "gpt-4o-mini", "GPT-4o mini" },
+    //     { "chatgpt-4o-latest", "GPT-4o latest" },
+    //     { "o1-mini", "o1-mini" },
+    //     { "o1-preview", "o1-preview" },
+    //     { "gpt-4", "GPT-4" },
+    //     { "gpt-4-turbo", "GPT-4o turbo" },
+    //     { "grok-2-vision", "Grok 2 Vision" },
+    //     { "grok-2", "Grok 2"},
+    //     { "grok-vision-beta", "Grok Vision (Beta)"},
+    //     { "grok-beta", "Grok (Beta)"}
+    // };
 
     public MainWindow()
     {
@@ -311,37 +320,67 @@ public sealed partial class MainWindow : Window
     // <summary>
     // API キーを設定します。
     // </summary>
-    static void SetUpAPIKey(string apiKey)
+    static void SetUpOpenAIAPIKey(string apiKey)
     {
         // apiKeyの値と保存先のパスを指定
         string subKeyPath = @"SOFTWARE\Yukari";
 
         // レジストリに書き込む
         using RegistryKey key = Registry.CurrentUser.CreateSubKey(subKeyPath);
-        key?.SetValue("apiKey", apiKey, RegistryValueKind.String);
+        key?.SetValue("CHATAI_API_KEY", apiKey, RegistryValueKind.String);
     }
+
+    // <summary>
+    // API キーを設定します。
+    // </summary>
+    static void SetUpGrokAPIKey(string apiKey)
+    {
+        // apiKeyの値と保存先のパスを指定
+        string subKeyPath = @"SOFTWARE\Yukari";
+
+        // レジストリに書き込む
+        using RegistryKey key = Registry.CurrentUser.CreateSubKey(subKeyPath);
+        key?.SetValue("GROK_API_KEY", apiKey, RegistryValueKind.String);
+    }
+
 
     // <summary>
     // API キーを非同期に取得します。
     // </summary>
-    public static string GetApiKey()
+    public static string GetOpenAIApiKey()
     {
         // レジストリのパスを指定
         string subKeyPath = @"SOFTWARE\Yukari";
 
         // レジストリから値を読み込む
         using RegistryKey? key = Registry.CurrentUser.OpenSubKey(subKeyPath);
-        return key?.GetValue("apiKey") as string ?? string.Empty;
+        return key?.GetValue("CHATAI_API_KEY") as string ?? string.Empty;
+    }
+
+    // <summary>
+    // API キーを非同期に取得します。
+    // </summary>
+    public static string GetGrokApiKey()
+    {
+        // レジストリのパスを指定
+        string subKeyPath = @"SOFTWARE\Yukari";
+
+        // レジストリから値を読み込む
+        using RegistryKey? key = Registry.CurrentUser.OpenSubKey(subKeyPath);
+        return key?.GetValue("GROK_API_KEY") as string ?? string.Empty;
     }
 
     // <summary>
     // API キー設定用のダイアログを表示し、入力された API キーを設定します。
     // </summary>
-    async void ClickSetAPIKey(object sender, RoutedEventArgs e)
+    async void ClickSetOpenAIAPIKey(object sender, RoutedEventArgs e)
     {
-        string apiKey = GetApiKey();
-        ConfigAPIKey configAPIKey = new();
-        configAPIKey.APIKeyBox.Password = apiKey;
+        string apiKey = GetOpenAIApiKey();
+
+        PasswordBox passwordBox = new()
+        {
+            Password = apiKey
+        };
 
         ContentDialog dialog = new()
         {
@@ -349,16 +388,51 @@ public sealed partial class MainWindow : Window
             Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
             PrimaryButtonText = "OK",
             SecondaryButtonText = Cancel.Text,
-            Title = SetAPIKey.Text,
+            Title = SetOpenAIAPIKey.Text,
             DefaultButton = ContentDialogButton.Primary,
-            Content = configAPIKey
+            Content = passwordBox
         };
         ContentDialogResult result = await dialog.ShowAsync();
 
         if (result == ContentDialogResult.Primary)
         {
-            apiKey = configAPIKey.APIKeyBox.Password;
-            SetUpAPIKey(apiKey);
+            apiKey = passwordBox.Password;
+            SetUpOpenAIAPIKey(apiKey);
+        }
+        else if (result == ContentDialogResult.Secondary)
+        {
+            // 何もしない
+        }
+    }
+
+    // <summary>
+    // API キー設定用のダイアログを表示し、入力された API キーを設定します。
+    // </summary>
+    async void ClickSetGrokAPIKey(object sender, RoutedEventArgs e)
+    {
+        string apiKey = GetGrokApiKey();
+
+        PasswordBox passwordBox = new()
+        {
+            Password = apiKey
+        };
+
+        ContentDialog dialog = new()
+        {
+            XamlRoot = Content.XamlRoot,
+            Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
+            PrimaryButtonText = "OK",
+            SecondaryButtonText = Cancel.Text,
+            Title = SetGrokAPIKey.Text,
+            DefaultButton = ContentDialogButton.Primary,
+            Content = passwordBox
+        };
+        ContentDialogResult result = await dialog.ShowAsync();
+
+        if (result == ContentDialogResult.Primary)
+        {
+            apiKey = passwordBox.Password;
+            SetUpGrokAPIKey(apiKey);
         }
         else if (result == ContentDialogResult.Secondary)
         {
@@ -419,6 +493,14 @@ public sealed partial class MainWindow : Window
     }
 
     // <summary>
+    // 指定されたメッセージを含む情報ダイアログを表示します。
+    // </summary>
+    public async Task ShowInfoDialog(string message)
+    {
+        await InfoDialog.Show(this, message);
+    }
+
+    // <summary>
     // アプリケーションを終了します。
     // </summary>
     void ClickExit(object sender, RoutedEventArgs e)
@@ -426,16 +508,155 @@ public sealed partial class MainWindow : Window
         Close();
     }
 
+    static string[] FilterModelsByRegex(string[] regexes, string[] models)
+    {
+        // 一致した要素を削除した結果を格納するリスト
+        List<string> filteredModels = new();
+
+        // 各モデルに対して正規表現の一致チェック
+        foreach (string model in models)
+        {
+            bool matches = false;
+
+            foreach (string ragex in regexes)
+            {
+                if (Regex.IsMatch(model, ragex))
+                {
+                    matches = true;
+                    break; // 一致したらループを抜ける
+                }
+            }
+
+            if (!matches)
+            {
+                filteredModels.Add(model); // 一致しなければ追加
+            }
+        }
+
+        return filteredModels.ToArray(); // リストを配列に変換して返す
+    }
+
+    async Task<string[]> GetOpenAIModelsAsync(){
+        string apiKey = GetOpenAIApiKey();
+        if (apiKey == null){
+            ShowErrorDialog("API キーが設定されていません");
+            return [];
+        }
+        OpenAIClient openAIClient = new(apiKey);
+
+        // モデル一覧を取得
+        OpenAIModelClient modelClient = openAIClient.GetOpenAIModelClient();
+        ClientResult<OpenAIModelCollection> models = await modelClient.GetModelsAsync();
+
+        List<string> allModel = [];
+
+        // モデル一覧を表示
+        foreach (OpenAIModel? model in models.Value)
+        {
+            allModel.Add(model.Id);
+        }
+
+        string[] regexes = ["^dall", ".+audio.+?", "^whisper", "^tts", "^text-embedding", "^babbage", "^davinci", "^omni-moderation", ".*realtime-preview", ".*instruct", "preview$", "\\d{2}$"];
+        string[] allModelFiltered = FilterModelsByRegex(regexes, [.. allModel]);
+        Array.Sort(allModelFiltered);
+
+        return allModelFiltered;
+    }
+
+    async Task<string[]> GetGrokModelsAsync(){
+        string apiKey = GetGrokApiKey();
+        if (apiKey == null){
+            ShowErrorDialog("API キーが設定されていません");
+            return [];
+        }
+        OpenAIClientOptions options = new(){
+            Endpoint = new Uri("https://api.x.ai/v1")
+        };
+        OpenAIClient openAIClient = new(new ApiKeyCredential(apiKey), options);
+        
+        // モデル一覧を取得
+        OpenAIModelClient modelClient = openAIClient.GetOpenAIModelClient();
+        ClientResult<OpenAIModelCollection>? models = null;
+        try{
+            models = await modelClient.GetModelsAsync();
+        }catch(Exception ex){
+            ShowErrorDialog(ex.Message);
+        }
+
+        List<string> allModel = [];
+
+        // モデル一覧を表示
+        if(models != null){
+            foreach (OpenAIModel? model in models.Value)
+            {
+                allModel.Add(model.Id);
+            }
+        }
+
+        // string[] regexes = ["^dall", ".+audio.+?", "^whisper", "^tts", "^text-embedding", "^babbage", "^davinci", "^omni-moderation", ".*realtime-preview", ".*instruct", "preview$", "\\d{2}$"];
+        // string[] allModelFiltered = FilterModelsByRegex(regexes, [.. allModel]);
+        // Array.Sort(allModelFiltered);
+
+        return [.. allModel];
+    }
+
+    // Define a function to get a model task based on the API key
+    Task<string[]> GetModelTask(string apiKey, Func<Task<string[]>> fetchModels)
+    {
+        return apiKey != string.Empty ? fetchModels() : Task.FromResult(Array.Empty<string>());
+    }
+
     async void SelectModel(object sender, RoutedEventArgs e)
     {
-        StackPanel content = new();
-        foreach (KeyValuePair<string, string> model in languageModels)
+        StackPanel openAIModelContent = new();
+        StackPanel grokModelContent = new();
+
+        // Retrieve tasks for existing models
+        if (GetOpenAIApiKey() == string.Empty && GetGrokApiKey() == string.Empty)
         {
-            content.Children.Add(new RadioButton
+            ShowErrorDialog(APIKeyIsNotSet.Text);
+            return;
+        }
+
+        Task<string[]> openAITask = GetModelTask(GetOpenAIApiKey(), GetOpenAIModelsAsync);
+        Task<string[]> grokTask = GetModelTask(GetGrokApiKey(), GetGrokModelsAsync);
+
+        // Wait for all tasks to complete
+        await Task.WhenAll(openAITask, grokTask);
+
+        // Retrieve model results
+        string[] openAIModels = await openAITask;
+        string[] grokModels = await grokTask;
+
+
+        foreach (string model in openAIModels)
+        {
+            openAIModelContent.Children.Add(new RadioButton
             {
-                Content = model.Value,
-                IsChecked = model.Value == GetModel()
+                Content = model,
+                GroupName = "models",
+                IsChecked = model == GetModel()
             });
+        }
+
+        foreach (string model in grokModels)
+        {
+            grokModelContent.Children.Add(new RadioButton
+            {
+                Content = model,
+                GroupName = "models",
+                IsChecked = model == GetModel()
+            });
+        }
+
+        StackPanel selectModelType = new();
+        if (GetOpenAIApiKey() != string.Empty) {
+            selectModelType.Children.Add(new TextBlock{Text = "OpenAI", FontWeight=FontWeights.Bold, FontSize=24, Margin = new Thickness(0, 0, 0, 8)});
+            selectModelType.Children.Add(openAIModelContent);
+        }
+        if (GetGrokApiKey() != string.Empty) {
+            selectModelType.Children.Add(new TextBlock{Text = "Grok", FontWeight=FontWeights.Bold, FontSize=24, Margin = new Thickness(0, 8, 0, 8)});
+            selectModelType.Children.Add(grokModelContent);
         }
 
         ContentDialog dialog = new()
@@ -446,13 +667,27 @@ public sealed partial class MainWindow : Window
             SecondaryButtonText = Cancel.Text,
             Title = SelectLangModel.Text,
             DefaultButton = ContentDialogButton.Primary,
-            Content = content
+            Content = new ScrollViewer(){
+                Content = selectModelType
+            }
         };
         ContentDialogResult result = await dialog.ShowAsync();
 
         if (result == ContentDialogResult.Primary)
         {
-            foreach (RadioButton radioButton in content.Children.Cast<RadioButton>())
+            foreach (RadioButton radioButton in openAIModelContent.Children.Cast<RadioButton>())
+            {
+                if (radioButton.IsChecked == true)
+                {
+                    if (radioButton.Content != null)
+                    {
+                        SetModel(radioButton.Content?.ToString() ?? "DefaultModelName");
+                    }
+                    break;
+                }
+            }
+
+            foreach (RadioButton radioButton in grokModelContent.Children.Cast<RadioButton>())
             {
                 if (radioButton.IsChecked == true)
                 {
