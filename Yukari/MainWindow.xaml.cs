@@ -556,7 +556,7 @@ public sealed partial class MainWindow : Window
             allModel.Add(model.Id);
         }
 
-        string[] regexes = ["^dall", ".+audio.+?", "^whisper", "^tts", "^text-embedding", "^babbage", "^davinci", "^omni-moderation", ".*realtime-preview", ".*instruct", "preview$", "\\d{2}$"];
+        string[] regexes = ["^dall", ".+audio.+?", "^whisper", "^tts", "^text-embedding", "^babbage", "^davinci", "^omni-moderation", ".*realtime-preview", ".*instruct", "\\d{2}$"];
         string[] allModelFiltered = FilterModelsByRegex(regexes, [.. allModel]);
         Array.Sort(allModelFiltered);
 
