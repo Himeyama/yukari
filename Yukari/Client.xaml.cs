@@ -127,6 +127,8 @@ public sealed partial class Client : Page
             HistoryItem history = JsonSerializer.Deserialize<HistoryItem>(Base64Decoder.DecodeBase64UTF8(iPCData.Data));
             history.HeadUser = GetFirstLine(history.User);
             history.HeadAssistant = GetFirstLine(history.Assistant);
+            history.Base64User = MainWindow.ConvertToBase64(history.User);
+            history.Base64Assistant = MainWindow.ConvertToBase64(history.Assistant);
             historyItems.Add(history);
             mainWindow.ChatItems.Items.Insert(0, history);
             mainWindow.Save();
@@ -159,7 +161,7 @@ public sealed partial class Client : Page
         }
     }
 
-    static string GetFirstLine(string text)
+    public static string GetFirstLine(string text)
     {
         // 改行コードで分割し、最初の行を取得し、トリミング
         return text.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries)[0].Trim();
@@ -167,8 +169,8 @@ public sealed partial class Client : Page
 
     public async void Print(HistoryItem historyItem)
     {
-        string userBase64 = Base64Decoder.EncodeToBase64UTF8(historyItem.User);
-        string assistantBase64 = Base64Decoder.EncodeToBase64UTF8(historyItem.Assistant);
+        string userBase64 = Base64Decoder.EncodeToBase64UTF8(MainWindow.ConvertFromBase64(historyItem.Base64User));
+        string assistantBase64 = Base64Decoder.EncodeToBase64UTF8(MainWindow.ConvertFromBase64(historyItem.Base64Assistant));
         _ = await WebUI.ExecuteScriptAsync($"window.setEditorBase64(\"{userBase64}\")");
         _ = await WebUI.ExecuteScriptAsync($"window.setOutputBase64(\"{assistantBase64}\")");
     }

@@ -42,6 +42,12 @@ public class HistoryItem
     public string? HeadUser { get; set; }
     [JsonPropertyName("headassistant")]
     public string? HeadAssistant { get; set; }
+
+    [JsonPropertyName("base64User")]
+    public string? Base64User { get; set; }
+    [JsonPropertyName("base64Assistant")]
+    public string? Base64Assistant { get; set; }
+
     [JsonPropertyName("uuid")]
     public string? Uuid { get; set; }
 }
@@ -461,6 +467,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // 履歴をクリック
     void ChatItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is ListView chatItems)
@@ -470,10 +477,8 @@ public sealed partial class MainWindow : Window
             {
                 TabViewItem? tabViewItem = Tabs.SelectedItem as TabViewItem;
                 if (tabViewItem == null)
-                {
                     return;
-                }
-                tabViewItem.Header = historyItem.HeadUser;
+                tabViewItem.Header =  Client.GetFirstLine(ConvertFromBase64(historyItem.Base64User));
                 if(tabViewItem.Content is Client client)
                 {
                     client.activeIdx = chatItems.SelectedIndex;
@@ -771,8 +776,28 @@ public sealed partial class MainWindow : Window
                 client.activeIdx = record.ActiveIdx;
                 client.historyItems = record.Histories;
             }
-            tabViewItem.Header = record.Header;
+            tabViewItem.Header = ConvertFromBase64(record.Header);
         }
+    }
+
+    public static string ConvertFromBase64(string? base64String)
+    {
+        if (base64String == null) base64String = "";
+        // Base64 文字列をバイト配列に変換
+        byte[] bytes = Convert.FromBase64String(base64String);
+        // バイト配列を UTF-8 文字列に変換
+        string originalString = Encoding.UTF8.GetString(bytes);   
+        return originalString;
+    }
+
+    public static string ConvertToBase64(string? input)
+    {
+        if (input == null) input = "";
+        // 入力文字列を UTF-8 バイト配列に変換
+        byte[] bytes = Encoding.UTF8.GetBytes(input);
+        // バイト配列を Base64 文字列に変換
+        string base64String = Convert.ToBase64String(bytes);
+        return base64String;
     }
 
     public void Save()
@@ -784,7 +809,7 @@ public sealed partial class MainWindow : Window
             if(tabItem.Content is Client client)
             {
                 Record record = new(){
-                    Header = tabItem.Header as string,
+                    Header = ConvertToBase64(tabItem.Header as string),
                     ActiveIdx = client.activeIdx,
                     Histories = client.historyItems
                 };
