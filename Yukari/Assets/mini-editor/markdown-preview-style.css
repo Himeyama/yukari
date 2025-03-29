@@ -1,0 +1,31 @@
+pre code.hljs {
+    font-size: 16px;
+    font-family: "PlemolJP Console NF", "Cascadia Code", 'Courier New', Courier, monospace;
+    font-weight: 500;
+    border-radius: 4px;
+    line-height: 24px;
+}
+
+/* Light mode styles */
+@media (prefers-color-scheme: light) {
+    body {
+        background-color: #FFFFFF;
+        color: #1F1F1F;
+    }
+
+    a {
+        color: #013B8F;
+    }
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #242424;
+        color: #E3E3E3;
+    }
+
+    a {
+        color: #4DA1E1;
+    }
+}

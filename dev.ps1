@@ -85,6 +85,8 @@ if ($arg -eq "run") {
 }
 elseif ($arg -eq "publish") {
     Publish
+}elseif($arg -eq "copy-editor") {
+    Copy-Item -Recurse ..\..\mini-editor\ .\Yukari\Assets\ -Force
 }
 elseif ($arg -eq "zip") {
     Zip

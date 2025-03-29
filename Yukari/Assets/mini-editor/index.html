@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Editor</title>
+</head>
+<body>
+    <div id="editor" style="width: 100vw; height: 100vh;"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.js"></script>
+    <script>
+        // Update theme on system theme change
+        matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            monaco.editor.setTheme(event.matches ? 'vs-dark' : 'vs-light');
+        });
+
+        const getSystemTheme = () => {
+            return matchMedia('(prefers-color-scheme: dark)').matches ? 'vs-dark' : 'vs-light';
+        }
+
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } });
+        require(['vs/editor/editor.main'], function() {
+            const editorElement = document.getElementById('editor');
+            const editor = monaco.editor.create(editorElement, {
+                value: "",
+                language: 'markdown',
+                theme: getSystemTheme(),
+                fontSize: 16 // Set font size (adjust as needed for 120%)
+            });
+
+            // Adjust editor size on window resize
+            window.addEventListener('resize', () => editor.layout());
+        });
+
+        // Function to get the current value from the editor
+        const getEditorContent = () => {
+            return monaco.editor.getEditors()[0].getValue();
+        }
+
+        // Example usage: Log the content to the console
+        document.addEventListener('keydown', (event) => {
+            if (event.ctrlKey && event.key === 's') { // Ctrl+S to log content
+                event.preventDefault();
+                console.log(getEditorContent());
+            }
+        });
+
+        // メッセージの受け取り
+        window.chrome.webview.addEventListener('message', (event) => {
+            const text = getEditorContent();
+            window.chrome.webview.postMessage(text);
+        });
+    </script>
+</body>
+</html>

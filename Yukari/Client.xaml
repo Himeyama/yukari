@@ -5,10 +5,16 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:Yukari"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:monaco="using:Monaco"
     mc:Ignorable="d">
     <Grid>
         <Border CornerRadius="4" BorderBrush="Transparent" BorderThickness="0">
-            <WebView2 Name="WebUI" />
+            <Grid RowDefinitions="*">
+                <!-- <GridSplitter Grid.Row="0" /> -->
+                <Grid Grid.Row="0">
+                    <WebView2 Name="WebUI" />
+                </Grid>
+            </Grid>
         </Border>
     </Grid>
 </Page>

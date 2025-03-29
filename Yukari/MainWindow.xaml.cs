@@ -17,6 +17,8 @@ using System.ClientModel;
 using OpenAI.Models;
 using Microsoft.UI.Text;
 using OpenAI.Chat;
+using Microsoft.Web.WebView2;
+using Microsoft.Web.WebView2.Core;
 
 namespace Yukari;
 
@@ -97,6 +99,61 @@ public sealed partial class MainWindow : Window
         SetModel(model);
 
         InitVoicevox();
+
+        // Set the Editor's Uri to Assets\mini-editor\index.html
+        string curDir = Directory.GetCurrentDirectory();
+        Editor.Source = new Uri(string.Format("file:///{0}/Yukari/Assets/mini-editor/index.html", curDir));
+        Preview.Source = new Uri(string.Format("file:///{0}/Yukari/Assets/mini-editor/markdown-preview.html", curDir));
+        InitPreviewer();
+    }
+
+    public async void InitPreviewer()
+    {
+        await Preview.EnsureCoreWebView2Async(null);
+        await Editor.EnsureCoreWebView2Async(null);
+
+        Preview.CoreWebView2Initialized += CoreWebView2InitializationCompleted;
+        Editor.WebMessageReceived += Editor_WebMessageReceived;
+    }
+
+    void Editor_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
+    {
+        // WebView2からのメッセージを受信
+        string message = args.TryGetWebMessageAsString();
+        if (message != null)
+        {
+            SendMessageToWebView(message);
+        }
+    }
+
+    void CoreWebView2InitializationCompleted(object sender, CoreWebView2InitializedEventArgs e)
+    {
+        SendMessageToWebView("Hello");
+    }
+
+    void SendMessageToWebView(string message) {
+        if (Preview.CoreWebView2 != null)
+        {
+            // JSON形式でメッセージを送信
+            var messageObject = new {
+                message = message
+            };
+            string json = JsonSerializer.Serialize(messageObject);
+            Preview.CoreWebView2.PostWebMessageAsJson(json);
+        }
+        else
+        {
+            // WebView2が初期化されていない場合のエラーハンドリング
+        }
+        // Preview.CoreWebView2.PostWebMessageAsJson("Hello, world!");
+    }
+
+    void Button_Click(object sender, RoutedEventArgs e)
+    {
+        if (Editor.CoreWebView2 != null)
+        {
+            Editor.CoreWebView2.PostWebMessageAsJson("{}");
+        }
     }
 
     /// <summary>

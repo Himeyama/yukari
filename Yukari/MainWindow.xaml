@@ -64,7 +64,16 @@
                 </Grid>
             </Grid>
 
-            <TabView SelectionChanged="Tabs_SelectionChanged" Grid.Column="1" Name="Tabs" VerticalAlignment="Stretch" AddTabButtonClick="TabView_AddButtonClick" TabCloseRequested="TabView_TabCloseRequested" Loaded="TabView_Loaded" />
+            <Grid RowDefinitions="Auto, *" Grid.Column="1">
+                <TabView SelectionChanged="Tabs_SelectionChanged" Grid.Row="0" Name="Tabs" VerticalAlignment="Stretch" AddTabButtonClick="TabView_AddButtonClick" TabCloseRequested="TabView_TabCloseRequested" Loaded="TabView_Loaded" />
+                <Grid RowDefinitions="*, Auto" Grid.Row="1">
+                    <Grid ColumnDefinitions="*, *" Grid.Row="0">
+                        <WebView2 Name="Editor" Grid.Column="0" />
+                        <WebView2 Name="Preview" Grid.Column="1" />
+                    </Grid>
+                    <Button Content="Button" Grid.Row="1" HorizontalAlignment="Stretch" Margin="8, 8, 8, 4" Style="{StaticResource AccentButtonStyle}" Click="Button_Click" />
+                </Grid>
+            </Grid>
         </Grid>
 
         <Grid Grid.Row="2">
