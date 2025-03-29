@@ -1,9 +1,24 @@
 pre code.hljs {
     font-size: 16px;
-    font-family: "PlemolJP Console NF", "Cascadia Code", 'Courier New', Courier, monospace;
-    font-weight: 500;
     border-radius: 4px;
     line-height: 24px;
+    text-wrap: auto;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    padding: unset;
+}
+
+code {
+    font-family: "PlemolJP Console NF", "Cascadia Code", 'Courier New', Courier, monospace;
+    font-weight: 500;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+body {
+    margin: 16px;
+    line-height: 1.5em;
+    font-family: "IBM Plex Sans JP", "Noto Sans JP", "BIZ UDGothic";
 }
 
 /* Light mode styles */
@@ -16,6 +31,11 @@ pre code.hljs {
     a {
         color: #013B8F;
     }
+
+    code {
+        background: #F5F5F5;
+        color: #E27092;
+    }
 }
 
 /* Dark mode styles */
@@ -27,5 +47,10 @@ pre code.hljs {
 
     a {
         color: #4DA1E1;
+    }
+
+    code {
+        background: #0D1116;
+        color: #F695C6;
     }
 }

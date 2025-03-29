@@ -17,7 +17,6 @@ using System.ClientModel;
 using OpenAI.Models;
 using Microsoft.UI.Text;
 using OpenAI.Chat;
-using Microsoft.Web.WebView2;
 using Microsoft.Web.WebView2.Core;
 
 namespace Yukari;
@@ -63,21 +62,6 @@ public class Record
 
 public sealed partial class MainWindow : Window
 {
-    // public readonly Dictionary<string, string> languageModels = new()
-    // {
-    //     { "gpt-4o", "GPT-4o" },
-    //     { "gpt-4o-mini", "GPT-4o mini" },
-    //     { "chatgpt-4o-latest", "GPT-4o latest" },
-    //     { "o1-mini", "o1-mini" },
-    //     { "o1-preview", "o1-preview" },
-    //     { "gpt-4", "GPT-4" },
-    //     { "gpt-4-turbo", "GPT-4o turbo" },
-    //     { "grok-2-vision", "Grok 2 Vision" },
-    //     { "grok-2", "Grok 2"},
-    //     { "grok-vision-beta", "Grok Vision (Beta)"},
-    //     { "grok-beta", "Grok (Beta)"}
-    // };
-
     public MainWindow()
     {
         InitializeComponent();
@@ -116,22 +100,14 @@ public sealed partial class MainWindow : Window
         Editor.WebMessageReceived += Editor_WebMessageReceived;
     }
 
-    void Editor_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
-    {
-        // WebView2からのメッセージを受信
-        string message = args.TryGetWebMessageAsString();
-        if (message != null)
-        {
-            SendMessageToWebView(message);
-        }
-    }
-
     void CoreWebView2InitializationCompleted(object sender, CoreWebView2InitializedEventArgs e)
     {
-        SendMessageToWebView("Hello");
+        PrintMarkdownPreview("Hello");
     }
 
-    void SendMessageToWebView(string message) {
+    void PrintMarkdownPreview(string? message) {
+        if(message == null) return;
+
         if (Preview.CoreWebView2 != null)
         {
             // JSON形式でメッセージを送信
@@ -145,15 +121,116 @@ public sealed partial class MainWindow : Window
         {
             // WebView2が初期化されていない場合のエラーハンドリング
         }
-        // Preview.CoreWebView2.PostWebMessageAsJson("Hello, world!");
     }
 
-    void Button_Click(object sender, RoutedEventArgs e)
+    void Send(object sender, RoutedEventArgs e)
     {
         if (Editor.CoreWebView2 != null)
         {
             Editor.CoreWebView2.PostWebMessageAsJson("{}");
         }
+    }
+
+    // エディタから情報を受け取る
+    void Editor_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
+    {
+        // WebView2からのメッセージを受信
+        string message = args.TryGetWebMessageAsString();
+        if (message != null)
+        {
+            SendChatMessage(message);
+        }
+    }
+
+    void SendChatMessage(string userMessage)
+    {
+        SetStatusBar(userMessage);
+
+        string apiKey = GetOpenAIApiKey();
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            ShowErrorDialog("API キーが設定されていません");
+            return;
+        }
+
+        // ChatClientのインスタンス作成
+        ChatClient client = new(model: GetModel(), apiKey: apiKey);
+
+        // チャット履歴を保持
+        List<ChatMessage> messages =
+        [
+            new UserChatMessage(userMessage)
+        ];
+
+        Client? clientInstance = GetClient();
+        string responseText = string.Empty;
+        try
+        {
+            // メッセージを送信してレスポンスを取得
+            CollectionResult<StreamingChatCompletionUpdate> responseStream = client.CompleteChatStreaming(messages);
+
+            // ストリームレスポンスの読み取り
+            foreach (StreamingChatCompletionUpdate completionUpdate in responseStream)
+            {
+                if (completionUpdate.ContentUpdate.Count > 0)
+                {
+                    responseText += completionUpdate.ContentUpdate[0].Text;
+                    PrintMarkdownPreview(responseText);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // エラー時のメッセージを表示
+            ShowErrorDialog($"エラーが発生しました: {ex.Message}");
+        }
+
+        AddHistory(clientInstance, userMessage, responseText);
+    }
+
+    // <summary>
+    // チャット履歴を追加します。
+    // </summary>
+    /// <param name="client">クライアントインスタンス</param>
+    /// <param name="userMessage">ユーザーメッセージ</param>
+    /// <param name="assistantMessage">アシスタントメッセージ</param>
+    /// <remarks>
+    /// <param name="client"></param>
+    /// <param name="userMessage"></param>
+    /// <param name="assistantMessage"></param>//  
+    void AddHistory(Client? client, string userMessage, string assistantMessage)
+    {
+        if(client == null)
+            return;
+        HistoryItem historyItem = new()
+        {
+            User = userMessage,
+            Assistant = assistantMessage,
+            HeadUser = GetFirstLine(userMessage),
+            HeadAssistant = GetFirstLine(assistantMessage),
+            Uuid = Guid.NewGuid().ToString()
+        };
+        client.historyItems.Add(historyItem);
+        ChatItems.Items.Insert(0, historyItem);
+        ChatItems.SelectedIndex = 0;
+        client.activeIdx = 0;
+    }
+
+    string GetFirstLine(string userMessage)
+    {
+        // 改行コードで分割し、最初の行を取得し、トリミング
+        return userMessage.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+    }
+
+    Client? GetClient() {
+        TabViewItem? tabViewItem = Tabs.SelectedItem as TabViewItem;
+        if (tabViewItem == null)
+            return null;
+        if (tabViewItem.Content is Client client)
+        {
+            return client;
+        }
+        return null;
     }
 
     /// <summary>
@@ -535,11 +612,11 @@ public sealed partial class MainWindow : Window
                 TabViewItem? tabViewItem = Tabs.SelectedItem as TabViewItem;
                 if (tabViewItem == null)
                     return;
-                tabViewItem.Header =  Client.GetFirstLine(ConvertFromBase64(historyItem.Base64User));
+                tabViewItem.Header =  historyItem.HeadUser;
                 if(tabViewItem.Content is Client client)
                 {
                     client.activeIdx = chatItems.SelectedIndex;
-                    client.Print(historyItem);
+                    PrintMarkdownPreview(historyItem.Assistant);
                     Save();
                 }
             }

@@ -22,4 +22,5 @@
   <data name="Next.Text" xml:space="preserve"><value>次へ</value></data>
   <data name="VoicevoxReading.Text" xml:space="preserve"><value>読み上げ</value></data>
   <data name="APIKeyIsNotSet.Text" xml:space="preserve"><value>API キーが設定されていません</value></data>
+  <data name="Send.Text" xml:space="preserve"><value>送信</value></data>
 </root>
