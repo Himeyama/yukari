@@ -18,6 +18,7 @@ using OpenAI.Models;
 using Microsoft.UI.Text;
 using OpenAI.Chat;
 using Microsoft.Web.WebView2.Core;
+using Windows.Graphics.Printing.OptionDetails;
 
 namespace Yukari;
 
@@ -41,6 +42,27 @@ public class Record
     public List<HistoryItem>? Histories { get; set; }
     public int ActiveIdx { get; set; }
     public string? Header { get; set; }
+}
+
+public class ChatMessage
+{
+    [JsonPropertyName("role")]
+    public string Role { get; set; } = string.Empty;
+
+    [JsonPropertyName("content")]
+    public string Content { get; set; } = string.Empty;
+}
+
+public class ChatRequest
+{
+    [JsonPropertyName("model")]
+    public string Model { get; set; } = string.Empty;
+
+    [JsonPropertyName("messages")]
+    public List<ChatMessage> Messages { get; set; } = new();
+
+    [JsonPropertyName("stream")]
+    public bool Stream { get; set; } = false;
 }
 
 public sealed partial class MainWindow : Window
@@ -159,6 +181,64 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    async Task StreamChatResponseAsync(string apiKey, string apiUrl, string model, string userMessage, List<HistoryItem> historyItems)
+    {
+        HttpClient client = new();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+
+        List<ChatMessage> messages = [];
+        foreach (HistoryItem item in historyItems)
+        {
+            if (!string.IsNullOrEmpty(item.User))
+                messages.Add(new ChatMessage { Role = "user", Content = item.User });
+            if (!string.IsNullOrEmpty(item.Assistant))
+                messages.Add(new ChatMessage { Role = "assistant", Content = item.Assistant });
+        }
+        if (!string.IsNullOrEmpty(userMessage))
+        {
+            messages.Add(new ChatMessage { Role = "user", Content = userMessage });
+        }
+
+        ChatRequest requestBody = new()
+        {
+            Model = model,
+            Messages = messages,
+            Stream = true
+        };
+        
+        if (string.IsNullOrEmpty(apiUrl) || string.IsNullOrEmpty(apiKey))
+        {
+            ShowErrorDialog("API URL または API キーが無効です。");
+            return;
+        }
+
+        using StringContent content = new(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+
+        HttpResponseMessage response = await client.PostAsync(apiUrl, content);
+        if (!response.IsSuccessStatusCode)
+        {
+            string errorDetails = await response.Content.ReadAsStringAsync();
+            ShowErrorDialog($"HTTPエラー: {response.StatusCode}\n詳細: {errorDetails}");
+            return;
+        }
+        else{
+            await ReadStreamResponseAsync(response);
+        }
+    }
+
+    async Task ReadStreamResponseAsync(HttpResponseMessage response)
+    {
+        response.EnsureSuccessStatusCode();
+        using Stream responseStream = await response.Content.ReadAsStreamAsync();
+        using StreamReader reader = new(responseStream);
+        char[] buffer = new char[1024];
+        while (await reader.ReadAsync(buffer, 0, buffer.Length) > 0)
+        {
+            string chunk = new(buffer);
+            PrintMarkdownPreview(chunk);
+        }
+    }
+
     async void SendChatMessage(string userMessage)
     {
         // Ensure userMessage is treated as UTF-8
@@ -178,15 +258,24 @@ public sealed partial class MainWindow : Window
         string model = GetModel();
         ChatClient client;
         
-
+        Client? activeClient = GetClient();
         if (model.StartsWith("grok", StringComparison.OrdinalIgnoreCase))
         {
             OpenAIClientOptions options = new()
             {
-                Endpoint = new Uri("https://api.x.ai/v1") // Correct Grok API endpoint
+                Endpoint = new Uri("https://api.x.ai/v1")
             };
-            ApiKeyCredential apiKeyCredential = new ApiKeyCredential(apiKey);
-            client = new ChatClient(model: model, credential: apiKeyCredential, options: options);
+            ApiKeyCredential credential = new ApiKeyCredential(GetGrokApiKey());
+
+            client = new ChatClient(model: model, credential: credential, options);
+            // await StreamChatResponseAsync(
+            //     apiKey,
+            //     "https://api.x.ai/v1/chat/completions",
+            //     model,
+            //     userMessage,
+            //     activeClient?.historyItems ?? []
+            // );
+            // return;
         }
         else
         {
@@ -194,22 +283,17 @@ public sealed partial class MainWindow : Window
         }
 
         // チャット履歴を保持
-        List<ChatMessage> messages = [];
+        List<OpenAI.Chat.ChatMessage> messages = [];
 
-        Client? activeClient = GetClient();
-        if(activeClient == null || activeClient.historyItems.Count == 0){
-            messages = new List<ChatMessage>
-            {
-                new UserChatMessage(userMessage)
-            };
-        }else{
+        if (activeClient?.historyItems != null)
+        {
             foreach (HistoryItem? item in activeClient.historyItems)
             {
                 messages.Add(new UserChatMessage(item.User));
-                messages.Add(new AssistantChatMessage(item.Assistant));       
+                messages.Add(new AssistantChatMessage(item.Assistant));
             }
-            messages.Add(new UserChatMessage(userMessage));
         }
+        messages.Add(new UserChatMessage(userMessage));
 
         string responseText = string.Empty;
         try
