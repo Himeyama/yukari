@@ -21,18 +21,6 @@ using Microsoft.Web.WebView2.Core;
 
 namespace Yukari;
 
-// API キーを保持するためのクラス
-public class ApiKeyRequest
-{
-    [JsonPropertyName("apikey")]
-    public string? Apikey { get; set; }
-}
-
-public class LanguageModelItem {
-    public string? Name { get; set;}
-    public string? DisplayName { get; set;}
-}
-
 public class HistoryItem
 {
     [JsonPropertyName("user")]
@@ -43,11 +31,6 @@ public class HistoryItem
     public string? HeadUser { get; set; }
     [JsonPropertyName("headassistant")]
     public string? HeadAssistant { get; set; }
-
-    [JsonPropertyName("base64User")]
-    public string? Base64User { get; set; }
-    [JsonPropertyName("base64Assistant")]
-    public string? Base64Assistant { get; set; }
 
     [JsonPropertyName("uuid")]
     public string? Uuid { get; set; }
@@ -85,53 +68,87 @@ public sealed partial class MainWindow : Window
         InitVoicevox();
 
         // Set the Editor's Uri to Assets\mini-editor\index.html
-        string curDir = Directory.GetCurrentDirectory();
-        Editor.Source = new Uri(string.Format("file:///{0}/Yukari/Assets/mini-editor/index.html", curDir));
-        Preview.Source = new Uri(string.Format("file:///{0}/Yukari/Assets/mini-editor/markdown-preview.html", curDir));
         InitPreviewer();
     }
 
     public async void InitPreviewer()
     {
-        await Preview.EnsureCoreWebView2Async(null);
-        await Editor.EnsureCoreWebView2Async(null);
+        string curDir = Directory.GetCurrentDirectory();
 
-        Preview.CoreWebView2Initialized += CoreWebView2InitializationCompleted;
-        Editor.WebMessageReceived += Editor_WebMessageReceived;
-    }
+        // Ensure paths are properly formatted for URI
+        string editorPath = Path.Combine(curDir, "Yukari", "Assets", "mini-editor", "index.html");
+        string previewPath = Path.Combine(curDir, "Yukari", "Assets", "mini-editor", "markdown-preview.html");
 
-    void CoreWebView2InitializationCompleted(object sender, CoreWebView2InitializedEventArgs e)
-    {
-        PrintMarkdownPreview("Hello");
-    }
-
-    void PrintMarkdownPreview(string? message) {
-        if(message == null) return;
-
-        if (Preview.CoreWebView2 != null)
+        if (!File.Exists(editorPath) || !File.Exists(previewPath))
         {
-            // JSON形式でメッセージを送信
-            var messageObject = new {
-                message = message
-            };
-            string json = JsonSerializer.Serialize(messageObject);
-            Preview.CoreWebView2.PostWebMessageAsJson(json);
+            ShowErrorDialog("Editor or Preview HTML file not found. Please check the file paths.");
+            return;
         }
-        else
+
+        Editor.Source = new Uri(editorPath);
+        Preview.Source = new Uri(previewPath);
+
+        try
         {
-            // WebView2が初期化されていない場合のエラーハンドリング
+            await Preview.EnsureCoreWebView2Async(null);
+            await Editor.EnsureCoreWebView2Async(null);
+            Editor.WebMessageReceived += Editor_WebMessageReceived;
+        }
+        catch (Exception ex)
+        {
+            ShowErrorDialog($"Failed to initialize WebView2: {ex.Message}");
         }
     }
 
+    async void PrintMarkdownPreview(string? message) {
+        if (message == null) return;
+
+        while (Preview.CoreWebView2 == null) {
+            await Task.Delay(100); // 0.1秒待機
+        }
+
+        // JSON形式でメッセージを送信
+        var messageObject = new {
+            message = message
+        };
+        string json = JsonSerializer.Serialize(messageObject);
+        Preview.CoreWebView2.PostWebMessageAsJson(json);
+    }
+
+    // <summary>
+    // エディタにメッセージを送信します。
     void Send(object sender, RoutedEventArgs e)
     {
         if (Editor.CoreWebView2 != null)
         {
-            Editor.CoreWebView2.PostWebMessageAsJson("{}");
+            // エディタは内容を取得して、生成 AI 質問モードでアプリ側に文章を返す
+            Editor.CoreWebView2.PostWebMessageAsJson("{\"send\": true}");
         }
     }
 
+    // <summary>
+    // エディタにメッセージを送信します。
+    /// </summary>
+    /// <param name="message">送信するメッセージ</param>
+    void WriteEditor(string? message)
+    {
+        if (message == null) return;
+        if (Editor.CoreWebView2 != null)
+        {
+            // JSON形式でメッセージを送信
+            EditorMessage messageObject = new()
+            {
+                Send = false,
+                Message = message
+            };
+            string json = JsonSerializer.Serialize(messageObject);
+            Editor.CoreWebView2.PostWebMessageAsJson(json);
+        }
+    }
+
+    // <summary>
     // エディタから情報を受け取る
+    /// </summary> 
     void Editor_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
     {
         // WebView2からのメッセージを受信
@@ -142,9 +159,13 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    void SendChatMessage(string userMessage)
+    async void SendChatMessage(string userMessage)
     {
-        SetStatusBar(userMessage);
+        // Ensure userMessage is treated as UTF-8
+        byte[] utf8Bytes = Encoding.UTF8.GetBytes(userMessage);
+        userMessage = Encoding.UTF8.GetString(utf8Bytes);
+
+        AddMessage(userMessage);
 
         string apiKey = GetOpenAIApiKey();
         if (string.IsNullOrEmpty(apiKey))
@@ -154,23 +175,50 @@ public sealed partial class MainWindow : Window
         }
 
         // ChatClientのインスタンス作成
-        ChatClient client = new(model: GetModel(), apiKey: apiKey);
+        string model = GetModel();
+        ChatClient client;
+        
+
+        if (model.StartsWith("grok", StringComparison.OrdinalIgnoreCase))
+        {
+            OpenAIClientOptions options = new()
+            {
+                Endpoint = new Uri("https://api.x.ai/v1") // Correct Grok API endpoint
+            };
+            ApiKeyCredential apiKeyCredential = new ApiKeyCredential(apiKey);
+            client = new ChatClient(model: model, credential: apiKeyCredential, options: options);
+        }
+        else
+        {
+            client = new ChatClient(model: model, apiKey: apiKey);
+        }
 
         // チャット履歴を保持
-        List<ChatMessage> messages =
-        [
-            new UserChatMessage(userMessage)
-        ];
+        List<ChatMessage> messages = [];
 
-        Client? clientInstance = GetClient();
+        Client? activeClient = GetClient();
+        if(activeClient == null || activeClient.historyItems.Count == 0){
+            messages = new List<ChatMessage>
+            {
+                new UserChatMessage(userMessage)
+            };
+        }else{
+            foreach (HistoryItem? item in activeClient.historyItems)
+            {
+                messages.Add(new UserChatMessage(item.User));
+                messages.Add(new AssistantChatMessage(item.Assistant));       
+            }
+            messages.Add(new UserChatMessage(userMessage));
+        }
+
         string responseText = string.Empty;
         try
         {
             // メッセージを送信してレスポンスを取得
-            CollectionResult<StreamingChatCompletionUpdate> responseStream = client.CompleteChatStreaming(messages);
+            AsyncCollectionResult<StreamingChatCompletionUpdate> responseStream = client.CompleteChatStreamingAsync(messages);
 
             // ストリームレスポンスの読み取り
-            foreach (StreamingChatCompletionUpdate completionUpdate in responseStream)
+            await foreach (StreamingChatCompletionUpdate completionUpdate in responseStream)
             {
                 if (completionUpdate.ContentUpdate.Count > 0)
                 {
@@ -181,12 +229,47 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            // エラー時のメッセージを表示
-            ShowErrorDialog($"エラーが発生しました: {ex.Message}");
+            // エラー時の詳細情報を表示
+            string errorDetails = $"エラーが発生しました: {ex.Message}\n" +
+                                $"スタックトレース: {ex.StackTrace}";
+            if (ex.InnerException != null)
+            {
+                errorDetails += $"\n内部例外: {ex.InnerException.Message}";
+            }
+
+            ShowErrorDialog(errorDetails);
+            return;
         }
 
-        AddHistory(clientInstance, userMessage, responseText);
+        AddHistory(activeClient, userMessage, responseText);
     }
+
+    void Debug(object message) {
+        // メッセージを JSON に変換
+        string messagesJson = JsonSerializer.Serialize(message, new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+        });
+
+        // ダイアログで JSON を表示
+        ContentDialog dialog = new()
+        {
+            Title = "Debug",
+            Content = new ScrollViewer
+            {
+                Content = new TextBlock
+                {
+                    Text = messagesJson,
+                    TextWrapping = TextWrapping.Wrap
+                }
+            },
+            CloseButtonText = "Close",
+            XamlRoot = Content.XamlRoot
+        };
+        _ = dialog.ShowAsync();
+    }
+
 
     // <summary>
     // チャット履歴を追加します。
@@ -297,7 +380,8 @@ public sealed partial class MainWindow : Window
     }
 
     // <summary>
-    // ステータスバーにメッセージを設定します。
+    // ステータスバーにメッセージを設定
+    // 基本的に AddMessage() を使用
     // </summary>
     void SetStatusBar(string message)
     {
@@ -365,12 +449,16 @@ public sealed partial class MainWindow : Window
     // <summary>
     // TabView に新しいタブを追加します。
     // </summary>
-    void TabView_AddButtonClick(TabView sender, object args)
+    void TabView_AddButtonClick(object sender, object args)
     {
-        TabView tabView = sender;
-        TabViewItem tabViewItem = CreateNewTab();
-        tabView.TabItems.Add(tabViewItem);
-        tabView.SelectedItem = tabViewItem;
+        if (sender is TabView tabView)
+        {
+            TabViewItem tabViewItem = CreateNewTab();
+            tabView.TabItems.Add(tabViewItem);
+            tabView.SelectedItem = tabViewItem;
+            WriteEditor("");
+            PrintMarkdownPreview("");
+        }
     }
 
     /// <summary>
@@ -378,18 +466,17 @@ public sealed partial class MainWindow : Window
     /// </summary>
     void TabView_TabCloseRequested(object sender, TabViewTabCloseRequestedEventArgs e)
     {
-        if (sender is not TabView tabView)
+        if (sender is TabView tabView)
         {
-            return;
+            TabViewItem tab = e.Tab;
+            int tabIndex = GetTabIndex(tabView, tab);
+            if (tabIndex < 0)
+            {
+                AddMessage("タブが見つかりませんでした。");
+                return;
+            }
+            HandleTabClose(tabView, tab, tabIndex);
         }
-        TabViewItem tab = e.Tab;
-        int tabIndex = GetTabIndex(tabView, tab);
-        if (tabIndex < 0)
-        {
-            AddMessage("タブが見つかりませんでした。");
-            return;
-        }
-        HandleTabClose(tabView, tab, tabIndex);
     }
 
     int GetTabIndex(TabView tabView, TabViewItem tab)
@@ -580,29 +667,35 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // <summary>
+    // タブの選択が変更されたときの処理
+    // </summary>
+    /// <param name="sender">タブビュー</param>
+    /// <param name="e">選択変更イベント</param>
     void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is not TabView tabs)
-        {
-            return;
-        }
-        TabViewItem? tabViewItem = tabs.SelectedItem as TabViewItem;
-        if (tabViewItem == null)
+        if (sender is not TabView tabs || tabs.SelectedItem is not TabViewItem tabViewItem)
         {
             return;
         }
 
-        // 選択されたタブに基づいて関数を実行
         if (tabViewItem.Content is Client client)
         {
-            // タブのタイトルを取得
             client.ApplyHistory();
             ChatItems.SelectedIndex = client.activeIdx;
+            if (ChatItems.SelectedItem == null)
+            {
+                WriteEditor("");
+                PrintMarkdownPreview("");
+            }
         }
     }
 
-    // 履歴をクリック
-    void ChatItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    // <summary>
+    // 履歴をクリックしたときの処理
+    // </summary>
+    /// <param name="sender">クリックされた ListView</param>
+    void ClickChatItems(object sender)
     {
         if (sender is ListView chatItems)
         {
@@ -612,15 +705,27 @@ public sealed partial class MainWindow : Window
                 TabViewItem? tabViewItem = Tabs.SelectedItem as TabViewItem;
                 if (tabViewItem == null)
                     return;
-                tabViewItem.Header =  historyItem.HeadUser;
+                tabViewItem.Header = historyItem.HeadUser;
                 if(tabViewItem.Content is Client client)
                 {
                     client.activeIdx = chatItems.SelectedIndex;
+                    WriteEditor(historyItem.User);
                     PrintMarkdownPreview(historyItem.Assistant);
                     Save();
                 }
             }
         }
+    }
+
+    void ChatItems_Clicked(object sender, RoutedEventArgs e)
+    {
+        ClickChatItems(sender);
+    }
+
+    // 履歴をクリック
+    void ChatItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        ClickChatItems(sender);
     }
 
     // <summary>
@@ -790,11 +895,11 @@ public sealed partial class MainWindow : Window
 
         StackPanel selectModelType = new();
         if (GetOpenAIApiKey() != string.Empty) {
-            selectModelType.Children.Add(new TextBlock{Text = "OpenAI", FontWeight=FontWeights.Bold, FontSize=24, Margin = new Thickness(0, 0, 0, 8)});
+            selectModelType.Children.Add(new TextBlock{Text = "OpenAI", FontWeight=FontWeights.Bold, FontSize=16, Margin = new Thickness(0, 0, 0, 8)});
             selectModelType.Children.Add(openAIModelContent);
         }
         if (GetGrokApiKey() != string.Empty) {
-            selectModelType.Children.Add(new TextBlock{Text = "Grok", FontWeight=FontWeights.Bold, FontSize=24, Margin = new Thickness(0, 8, 0, 8)});
+            selectModelType.Children.Add(new TextBlock{Text = "Grok", FontWeight=FontWeights.Bold, FontSize=16, Margin = new Thickness(0, 8, 0, 8)});
             selectModelType.Children.Add(grokModelContent);
         }
 
@@ -890,7 +995,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    public void Load()
+    public async void Load()
     {
         string historiesPath = GetHistoriesPath();
         if(!File.Exists(historiesPath))
@@ -912,6 +1017,9 @@ public sealed partial class MainWindow : Window
             }
             tabViewItem.Header = ConvertFromBase64(record.Header);
         }
+
+        await Task.Delay(1000);
+        ClickChatItems(ChatItems);
     }
 
     public static string ConvertFromBase64(string? base64String)
@@ -986,4 +1094,13 @@ public sealed partial class MainWindow : Window
         string historiesPath = Path.Join(yukariPath, "records.json");
         return historiesPath;
     }
+}
+
+internal class EditorMessage
+{
+    [JsonPropertyName("send")]
+    public bool Send { get; set; } = false;
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = "";
 }

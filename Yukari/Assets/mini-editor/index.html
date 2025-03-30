@@ -38,18 +38,46 @@
             return monaco.editor.getEditors()[0].getValue();
         }
 
-        // Example usage: Log the content to the console
-        document.addEventListener('keydown', (event) => {
-            if (event.ctrlKey && event.key === 's') { // Ctrl+S to log content
+        // F5 時に AI にリクエストを送信
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'F5') {
                 event.preventDefault();
-                console.log(getEditorContent());
+                // 生成 AI にリクエスト
+                const text = getEditorContent();
+                window.chrome.webview.postMessage(text);
             }
         });
 
-        // メッセージの受け取り
-        window.chrome.webview.addEventListener('message', (event) => {
+        // Shift + Enter 時に AI にリクエストを送信
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && event.shiftKey) {
+            event.preventDefault();
+            // 生成 AI にリクエスト
             const text = getEditorContent();
             window.chrome.webview.postMessage(text);
+            }
+        });
+
+        // エディタに書き込み
+        const writeEditorContent = (text) => {
+            const editor = monaco.editor.getEditors()[0];
+            editor.setValue(text);
+        }
+
+        // メッセージの受け取り
+        window.chrome.webview.addEventListener('message', (event) => {
+            const data = event.data;
+            console.log(data);
+            if(data.send) {
+                const text = getEditorContent();
+                window.chrome.webview.postMessage(text);
+                return;
+            }
+
+            if ('message' in data) {
+                writeEditorContent(data.message);
+                return;
+            }
         });
     </script>
 </body>

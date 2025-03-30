@@ -50,7 +50,7 @@
                 <TextBlock Text="History" x:Uid="History" Margin="8, 8, 8, 0" FontWeight="Bold" FontSize="16" Grid.Row="1" />
                 <Grid Grid.Row="2" Margin="0, 8, 0, 0">
                     <ScrollViewer>
-                        <ListView Name="ChatItems" x:FieldModifier="Public" SelectionChanged="ChatItems_SelectionChanged">
+                        <ListView Name="ChatItems" x:FieldModifier="Public" SelectionChanged="ChatItems_SelectionChanged" ItemClick="ChatItems_Clicked" IsItemClickEnabled="True">
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="local:HistoryItem">
                                     <StackPanel Margin="0, 8, 0, 8">

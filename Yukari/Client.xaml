@@ -12,7 +12,6 @@
             <Grid RowDefinitions="*">
                 <!-- <GridSplitter Grid.Row="0" /> -->
                 <Grid Grid.Row="0">
-                    <WebView2 Name="WebUI" />
                 </Grid>
             </Grid>
         </Border>
