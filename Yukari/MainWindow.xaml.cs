@@ -181,64 +181,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    async Task StreamChatResponseAsync(string apiKey, string apiUrl, string model, string userMessage, List<HistoryItem> historyItems)
-    {
-        HttpClient client = new();
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-
-        List<ChatMessage> messages = [];
-        foreach (HistoryItem item in historyItems)
-        {
-            if (!string.IsNullOrEmpty(item.User))
-                messages.Add(new ChatMessage { Role = "user", Content = item.User });
-            if (!string.IsNullOrEmpty(item.Assistant))
-                messages.Add(new ChatMessage { Role = "assistant", Content = item.Assistant });
-        }
-        if (!string.IsNullOrEmpty(userMessage))
-        {
-            messages.Add(new ChatMessage { Role = "user", Content = userMessage });
-        }
-
-        ChatRequest requestBody = new()
-        {
-            Model = model,
-            Messages = messages,
-            Stream = true
-        };
-        
-        if (string.IsNullOrEmpty(apiUrl) || string.IsNullOrEmpty(apiKey))
-        {
-            ShowErrorDialog("API URL または API キーが無効です。");
-            return;
-        }
-
-        using StringContent content = new(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
-
-        HttpResponseMessage response = await client.PostAsync(apiUrl, content);
-        if (!response.IsSuccessStatusCode)
-        {
-            string errorDetails = await response.Content.ReadAsStringAsync();
-            ShowErrorDialog($"HTTPエラー: {response.StatusCode}\n詳細: {errorDetails}");
-            return;
-        }
-        else{
-            await ReadStreamResponseAsync(response);
-        }
-    }
-
-    async Task ReadStreamResponseAsync(HttpResponseMessage response)
-    {
-        response.EnsureSuccessStatusCode();
-        using Stream responseStream = await response.Content.ReadAsStreamAsync();
-        using StreamReader reader = new(responseStream);
-        char[] buffer = new char[1024];
-        while (await reader.ReadAsync(buffer, 0, buffer.Length) > 0)
-        {
-            string chunk = new(buffer);
-            PrintMarkdownPreview(chunk);
-        }
-    }
-
     async void SendChatMessage(string userMessage)
     {
         // Ensure userMessage is treated as UTF-8
@@ -268,14 +210,6 @@ public sealed partial class MainWindow : Window
             ApiKeyCredential credential = new ApiKeyCredential(GetGrokApiKey());
 
             client = new ChatClient(model: model, credential: credential, options);
-            // await StreamChatResponseAsync(
-            //     apiKey,
-            //     "https://api.x.ai/v1/chat/completions",
-            //     model,
-            //     userMessage,
-            //     activeClient?.historyItems ?? []
-            // );
-            // return;
         }
         else
         {
