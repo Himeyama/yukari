@@ -18,7 +18,11 @@ using OpenAI.Models;
 using Microsoft.UI.Text;
 using OpenAI.Chat;
 using Microsoft.Web.WebView2.Core;
-using Windows.Graphics.Printing.OptionDetails;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace Yukari;
 
@@ -97,21 +101,25 @@ public sealed partial class MainWindow : Window
     {
         string curDir = Directory.GetCurrentDirectory();
 
-        // Ensure paths are properly formatted for URI
         string editorPath = Path.Combine(curDir, "Yukari", "Assets", "mini-editor", "index.html");
         string previewPath = Path.Combine(curDir, "Yukari", "Assets", "mini-editor", "markdown-preview.html");
 
         if (!File.Exists(editorPath) || !File.Exists(previewPath))
         {
-            ShowErrorDialog("Editor or Preview HTML file not found. Please check the file paths.");
-            return;
+            editorPath = Path.Combine(curDir, "..", "mini-editor", "index.html");
+            previewPath = Path.Combine(curDir, "..", "mini-editor", "markdown-preview.html");
+            if (!File.Exists(editorPath) || !File.Exists(previewPath))
+            {
+                AddMessage($"Editor or Preview HTML file not found. Please check the file paths: {curDir}");
+                return;
+            }
         }
 
-        Editor.Source = new Uri(editorPath);
-        Preview.Source = new Uri(previewPath);
 
         try
         {
+            Editor.Source = new Uri(editorPath);
+            Preview.Source = new Uri(previewPath);
             await Preview.EnsureCoreWebView2Async(null);
             await Editor.EnsureCoreWebView2Async(null);
             Editor.WebMessageReceived += Editor_WebMessageReceived;
@@ -751,7 +759,7 @@ public sealed partial class MainWindow : Window
     // </summary>
     public void ShowErrorDialog(string message)
     {
-        ErrorDialog.Show(this, message);
+        _ = ErrorDialog.Show(this, message);
     }
 
     // <summary>

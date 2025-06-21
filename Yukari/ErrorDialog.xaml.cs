@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
+using System.Threading.Tasks;
+using System;
 
 namespace Yukari;
 
@@ -10,7 +12,7 @@ public sealed partial class ErrorDialog : Page
         InitializeComponent();
     }
 
-    public static async void Show(MainWindow mainWindow, string message)
+    public static async Task Show(MainWindow mainWindow, string message)
     {
         // ダイアログで JSON を表示
         ContentDialog dialog = new()
@@ -29,6 +31,6 @@ public sealed partial class ErrorDialog : Page
             PrimaryButtonText = "OK"
         };
 
-        await dialog.ShowAsync();
+        _ = await dialog.ShowAsync();
     }
 }

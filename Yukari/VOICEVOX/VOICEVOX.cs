@@ -10,7 +10,11 @@ using Microsoft.UI.Xaml;
 using System.Media;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Win32;
-using Windows.ApplicationModel.Appointments.AppointmentsProvider;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Net.Http;
+using System;
+using System.IO;
 
 namespace Yukari;
 

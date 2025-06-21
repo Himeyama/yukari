@@ -1,3 +1,6 @@
+using System.Net.Http;
+using System.Threading.Tasks;
+
 namespace Yukari;
 
 class APIManager
@@ -14,7 +17,7 @@ class APIManager
     /// <returns>一致するポート番号、見つからない場合は null</returns>
     public static async Task<int?> FindPortWithVersionAsync(string host, int startPort, int endPort, string path, string expectedVersion)
     {
-        using HttpClient httpClient = new HttpClient();
+        using HttpClient httpClient = new();
         for (int port = startPort; port <= endPort; port++)
         {
             string url = $"http://{host}:{port}{path}";

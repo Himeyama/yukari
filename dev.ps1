@@ -76,7 +76,7 @@ function Pack() {
         Remove-Item -Recurse -Force .\Yukari\publish
     }
     Publish
-    Copy-Item -Recurse ..\yukari-ui\build Yukari\publish\yukari-ui
+    # Copy-Item -Recurse ..\yukari-ui\build Yukari\publish\yukari-ui
     .'C:\Program Files (x86)\NSIS\makensis.exe' /DVERSION="$version" /DDATE="$date" /DSIZE="$size" /DMUI_ICON="$muiIcon" /DPUBLISH_DIR="$publishDir" /DPRODUCT_NAME="$appName" /DEXEC_FILE="$execFile" /DPUBLISHER="$publisher" /DDESKTOP_APP_NAME="$appName" installer.nsh
 }
 

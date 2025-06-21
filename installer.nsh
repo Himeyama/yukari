@@ -48,6 +48,7 @@ Section
     # インストールされるファイル
     File /r "${PUBLISH_DIR}\*.*"
     File "${MUI_ICON}"
+    File /r "Yukari\Assets\*.*"
 
     # アンインストーラを出力
     WriteUninstaller "$INSTDIR\Uninstall.exe"
