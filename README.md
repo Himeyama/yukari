@@ -4,7 +4,11 @@
 Yukari は生成 AI クライアントのデスクトップアプリです。
 Windows 10 / 11 対応の WinUI 3 アプリです。
 
-![](docs/Demo.gif)
+### ノートモード
+![](docs/yukari1.gif)
+
+### 自動操縦モード
+![](docs/yukari2.gif)
 
 ## ダウンロード
 
