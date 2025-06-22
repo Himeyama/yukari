@@ -17,6 +17,7 @@
                     <MenuBarItem Title="File" x:Uid="File">
                         <MenuFlyoutItem Text="Set up the OpenAI API key" x:Uid="SetOpenAIAPIKey" Click="ClickSetOpenAIAPIKey" Name="SetOpenAIAPIKey" />
                         <MenuFlyoutItem Text="Set up the Grok API key" x:Uid="SetGrokAPIKey" Click="ClickSetGrokAPIKey" Name="SetGrokAPIKey" />
+                        <MenuFlyoutItem Text="Automate" x:Uid="Automate" Click="Click_AddAutomate" />
                         <MenuFlyoutItem Text="Exit" x:Uid="Exit" Click="ClickExit" />
                     </MenuBarItem>
 
@@ -37,7 +38,7 @@
         </Grid>
 
         <Grid Grid.Row="1" ColumnDefinitions="Auto, *">
-            <Grid Grid.Column="0" Width="300" Margin="8, 8, 8, 8" RowDefinitions="Auto, Auto, *">
+            <Grid Name="SidePanel" Grid.Column="0" Width="300" Margin="8, 8, 8, 8" RowDefinitions="Auto, Auto, *">
                 <!-- 読み上げボタン -->
                 <Button Grid.Row="0" Click="ClickVoicevoxReading" Name="VoicevoxReadingButton" Visibility="Collapsed" Margin="0, 0, 0, 0" HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal">
@@ -47,7 +48,7 @@
                 </Button>
 
                 <!-- 履歴 -->
-                <TextBlock Text="History" x:Uid="History" Margin="8, 8, 8, 0" FontWeight="Bold" FontSize="16" Grid.Row="1" />
+                <TextBlock Name="HistoryPanel" Text="History" x:Uid="History" Margin="8, 8, 8, 0" FontWeight="Bold" FontSize="16" Grid.Row="1" />
                 <Grid Grid.Row="2" Margin="0, 8, 0, 0">
                     <ScrollViewer>
                         <ListView Name="ChatItems" x:FieldModifier="Public" SelectionChanged="ChatItems_SelectionChanged" ItemClick="ChatItems_Clicked" IsItemClickEnabled="True">
@@ -64,9 +65,9 @@
                 </Grid>
             </Grid>
 
-            <Grid RowDefinitions="Auto, *" Grid.Column="1">
+            <Grid RowDefinitions="Auto, *" Grid.Column="1" Name="TabArea">
                 <TabView SelectionChanged="Tabs_SelectionChanged" Grid.Row="0" Name="Tabs" VerticalAlignment="Stretch" AddTabButtonClick="TabView_AddButtonClick" TabCloseRequested="TabView_TabCloseRequested" Loaded="TabView_Loaded" />
-                <Grid RowDefinitions="*, Auto" Grid.Row="1">
+                <Grid RowDefinitions="*, Auto" Grid.Row="1" Name="EditorPreview">
                     <Grid ColumnDefinitions="*, *" Grid.Row="0">
                         <WebView2 Name="Editor" Grid.Column="0" />
                         <WebView2 Name="Preview" Grid.Column="1" />

@@ -23,4 +23,12 @@
   <data name="VoicevoxReading.Text" xml:space="preserve"><value>読み上げ</value></data>
   <data name="APIKeyIsNotSet.Text" xml:space="preserve"><value>API キーが設定されていません</value></data>
   <data name="Send.Text" xml:space="preserve"><value>送信</value></data>
+  <data name="Accept.Text" xml:space="preserve"><value>許可</value></data>
+  <data name="Decline.Text" xml:space="preserve"><value>拒否</value></data>
+  <data name="AllowThisCommand.Text" xml:space="preserve"><value>コマンドの実行を許可しますか?</value></data>
+  <data name="AllowWriteThisContent.Text" xml:space="preserve"><value>書き込みを許可しますか?</value></data>
+  <data name="Path.Text" xml:space="preserve"><value>パス:</value></data>
+  <data name="Command.Text" xml:space="preserve"><value>コマンド:</value></data>
+  <data name="Content.Text" xml:space="preserve"><value>内容:</value></data>
+  <data name="Retry.Text" xml:space="preserve"><value>再試行</value></data>
 </root>

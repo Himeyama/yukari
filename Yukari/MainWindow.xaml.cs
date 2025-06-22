@@ -130,15 +130,18 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    async void PrintMarkdownPreview(string? message) {
+    async void PrintMarkdownPreview(string? message)
+    {
         if (message == null) return;
 
-        while (Preview.CoreWebView2 == null) {
+        while (Preview.CoreWebView2 == null)
+        {
             await Task.Delay(100); // 0.1秒待機
         }
 
         // JSON形式でメッセージを送信
-        var messageObject = new {
+        var messageObject = new
+        {
             message = message
         };
         string json = JsonSerializer.Serialize(messageObject);
@@ -206,23 +209,13 @@ public sealed partial class MainWindow : Window
 
         // ChatClientのインスタンス作成
         string model = GetModel();
-        ChatClient client;
-        
-        Client? activeClient = GetClient();
-        if (model.StartsWith("grok", StringComparison.OrdinalIgnoreCase))
-        {
-            OpenAIClientOptions options = new()
-            {
-                Endpoint = new Uri("https://api.x.ai/v1")
-            };
-            ApiKeyCredential credential = new ApiKeyCredential(GetGrokApiKey());
+        ChatClient chatClient;
 
-            client = new ChatClient(model: model, credential: credential, options);
-        }
-        else
+        Client? activeClient = GetClient();
+        chatClient = new ChatClient(model: model, credential: new ApiKeyCredential(GetApiKey()), new OpenAIClientOptions()
         {
-            client = new ChatClient(model: model, apiKey: apiKey);
-        }
+            Endpoint = GetEndpoint()
+        });
 
         // チャット履歴を保持
         List<OpenAI.Chat.ChatMessage> messages = [];
@@ -241,7 +234,7 @@ public sealed partial class MainWindow : Window
         try
         {
             // メッセージを送信してレスポンスを取得
-            AsyncCollectionResult<StreamingChatCompletionUpdate> responseStream = client.CompleteChatStreamingAsync(messages);
+            AsyncCollectionResult<StreamingChatCompletionUpdate> responseStream = chatClient.CompleteChatStreamingAsync(messages);
 
             // ストリームレスポンスの読み取り
             await foreach (StreamingChatCompletionUpdate completionUpdate in responseStream)
@@ -270,7 +263,8 @@ public sealed partial class MainWindow : Window
         AddHistory(activeClient, userMessage, responseText);
     }
 
-    void Debug(object message) {
+    void Debug(object message)
+    {
         // メッセージを JSON に変換
         string messagesJson = JsonSerializer.Serialize(message, new JsonSerializerOptions
         {
@@ -309,7 +303,7 @@ public sealed partial class MainWindow : Window
     /// <param name="assistantMessage"></param>//  
     void AddHistory(Client? client, string userMessage, string assistantMessage)
     {
-        if(client == null)
+        if (client == null)
             return;
         HistoryItem historyItem = new()
         {
@@ -331,7 +325,8 @@ public sealed partial class MainWindow : Window
         return userMessage.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries)[0].Trim();
     }
 
-    Client? GetClient() {
+    Client? GetClient()
+    {
         TabViewItem? tabViewItem = Tabs.SelectedItem as TabViewItem;
         if (tabViewItem == null)
             return null;
@@ -351,7 +346,8 @@ public sealed partial class MainWindow : Window
         VOICEVOX.mainWindow = this;
         string? voicevoxVersion = await VOICEVOX.GetVersion();
         VoicevoxButton.Visibility = Visibility.Visible;
-        if(voicevoxVersion == null){
+        if (voicevoxVersion == null)
+        {
             VoicevoxButtonText.Text = "VOICEVOX を起動する";
             return;
         }
@@ -360,7 +356,8 @@ public sealed partial class MainWindow : Window
 
         string speaker = VOICEVOX.GetSpeaker();
         string style = VOICEVOX.GetStyle();
-        if(speaker != string.Empty && style != string.Empty){
+        if (speaker != string.Empty && style != string.Empty)
+        {
             VoicevoxButtonText.Text = $"VOICEVOX: {speaker} ({style})";
         }
     }
@@ -462,9 +459,10 @@ public sealed partial class MainWindow : Window
     {
         Load();
         TabView? tabView = sender as TabView;
-        if(tabView == null)
+        if (tabView == null)
             return;
-        if(tabView.TabItems.Count == 0){
+        if (tabView.TabItems.Count == 0)
+        {
             TabViewItem tabViewItem = CreateNewTab();
             tabView?.TabItems.Add(tabViewItem);
             if (tabView != null)
@@ -580,7 +578,7 @@ public sealed partial class MainWindow : Window
 
         // レジストリに書き込む
         using RegistryKey key = Registry.CurrentUser.CreateSubKey(subKeyPath);
-        key?.SetValue("CHATAI_API_KEY", apiKey, RegistryValueKind.String);
+        key?.SetValue("OPENAI_API_KEY", apiKey, RegistryValueKind.String);
     }
 
     // <summary>
@@ -596,6 +594,13 @@ public sealed partial class MainWindow : Window
         key?.SetValue("GROK_API_KEY", apiKey, RegistryValueKind.String);
     }
 
+    public static string GetApiKey()
+    {
+        string model = GetModel();
+        if (model.StartsWith("grok", StringComparison.OrdinalIgnoreCase))
+            return GetGrokApiKey();
+        return GetOpenAIApiKey();        
+    }
 
     // <summary>
     // API キーを非同期に取得します。
@@ -607,7 +612,7 @@ public sealed partial class MainWindow : Window
 
         // レジストリから値を読み込む
         using RegistryKey? key = Registry.CurrentUser.OpenSubKey(subKeyPath);
-        return key?.GetValue("CHATAI_API_KEY") as string ?? string.Empty;
+        return key?.GetValue("OPENAI_API_KEY") as string ?? string.Empty;
     }
 
     // <summary>
@@ -714,6 +719,15 @@ public sealed partial class MainWindow : Window
                 WriteEditor("");
                 PrintMarkdownPreview("");
             }
+            Grid.SetRow(tabs, 0);
+            EditorPreview.Visibility = Visibility.Visible;
+            SidePanel.Visibility = Visibility.Visible;
+        }
+        else if (tabViewItem.Content is Automate automate)
+        {
+            Grid.SetRow(Tabs, 1);
+            EditorPreview.Visibility = Visibility.Collapsed;
+            SidePanel.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -732,7 +746,7 @@ public sealed partial class MainWindow : Window
                 if (tabViewItem == null)
                     return;
                 tabViewItem.Header = historyItem.HeadUser;
-                if(tabViewItem.Content is Client client)
+                if (tabViewItem.Content is Client client)
                 {
                     client.activeIdx = chatItems.SelectedIndex;
                     WriteEditor(historyItem.User);
@@ -806,9 +820,11 @@ public sealed partial class MainWindow : Window
         return filteredModels.ToArray(); // リストを配列に変換して返す
     }
 
-    async Task<string[]> GetOpenAIModelsAsync(){
+    async Task<string[]> GetOpenAIModelsAsync()
+    {
         string apiKey = GetOpenAIApiKey();
-        if (apiKey == null){
+        if (apiKey == null)
+        {
             ShowErrorDialog("API キーが設定されていません");
             return [];
         }
@@ -833,30 +849,37 @@ public sealed partial class MainWindow : Window
         return allModelFiltered;
     }
 
-    async Task<string[]> GetGrokModelsAsync(){
+    async Task<string[]> GetGrokModelsAsync()
+    {
         string apiKey = GetGrokApiKey();
-        if (apiKey == null){
+        if (apiKey == null)
+        {
             ShowErrorDialog("API キーが設定されていません");
             return [];
         }
-        OpenAIClientOptions options = new(){
+        OpenAIClientOptions options = new()
+        {
             Endpoint = new Uri("https://api.x.ai/v1")
         };
         OpenAIClient openAIClient = new(new ApiKeyCredential(apiKey), options);
-        
+
         // モデル一覧を取得
         OpenAIModelClient modelClient = openAIClient.GetOpenAIModelClient();
         ClientResult<OpenAIModelCollection>? models = null;
-        try{
+        try
+        {
             models = await modelClient.GetModelsAsync();
-        }catch(Exception ex){
+        }
+        catch (Exception ex)
+        {
             ShowErrorDialog(ex.Message);
         }
 
         List<string> allModel = [];
 
         // モデル一覧を表示
-        if(models != null){
+        if (models != null)
+        {
             foreach (OpenAIModel? model in models.Value)
             {
                 allModel.Add(model.Id);
@@ -920,12 +943,14 @@ public sealed partial class MainWindow : Window
         }
 
         StackPanel selectModelType = new();
-        if (GetOpenAIApiKey() != string.Empty) {
-            selectModelType.Children.Add(new TextBlock{Text = "OpenAI", FontWeight=FontWeights.Bold, FontSize=16, Margin = new Thickness(0, 0, 0, 8)});
+        if (GetOpenAIApiKey() != string.Empty)
+        {
+            selectModelType.Children.Add(new TextBlock { Text = "OpenAI", FontWeight = FontWeights.Bold, FontSize = 16, Margin = new Thickness(0, 0, 0, 8) });
             selectModelType.Children.Add(openAIModelContent);
         }
-        if (GetGrokApiKey() != string.Empty) {
-            selectModelType.Children.Add(new TextBlock{Text = "Grok", FontWeight=FontWeights.Bold, FontSize=16, Margin = new Thickness(0, 8, 0, 8)});
+        if (GetGrokApiKey() != string.Empty)
+        {
+            selectModelType.Children.Add(new TextBlock { Text = "Grok", FontWeight = FontWeights.Bold, FontSize = 16, Margin = new Thickness(0, 8, 0, 8) });
             selectModelType.Children.Add(grokModelContent);
         }
 
@@ -937,7 +962,8 @@ public sealed partial class MainWindow : Window
             SecondaryButtonText = Cancel.Text,
             Title = SelectLangModel.Text,
             DefaultButton = ContentDialogButton.Primary,
-            Content = new ScrollViewer(){
+            Content = new ScrollViewer()
+            {
                 Content = selectModelType
             }
         };
@@ -983,10 +1009,14 @@ public sealed partial class MainWindow : Window
         string subKeyPath = @"SOFTWARE\Yukari";
         // レジストリに書き込む
         using RegistryKey key = Registry.CurrentUser.CreateSubKey(subKeyPath);
-        if(key != null){
-            try{
+        if (key != null)
+        {
+            try
+            {
                 key.SetValue("modelName", modelName ?? "GPT-4o mini", RegistryValueKind.String);
-            }catch(Exception ex){
+            }
+            catch (Exception ex)
+            {
                 AddMessage(ex.Message);
             }
             LanguageModel.Text = modelName ?? "GPT-4o mini";
@@ -996,7 +1026,7 @@ public sealed partial class MainWindow : Window
     // <summary>
     // API キーを取得します。
     // </summary>
-    static string GetModel()
+    public static string GetModel()
     {
         // レジストリのパスを指定
         string subKeyPath = @"SOFTWARE\Yukari";
@@ -1006,6 +1036,14 @@ public sealed partial class MainWindow : Window
         if (key == null)
             return string.Empty;
         return key?.GetValue("modelName") as string ?? string.Empty;
+    }
+
+    public static Uri GetEndpoint()
+    {
+        string model = GetModel();
+        if (model.StartsWith("grok", StringComparison.OrdinalIgnoreCase))
+            return new Uri("https://api.x.ai/v1");
+        return new Uri("https://api.openai.com/v1");
     }
 
     void ClickVoicevoxReading(object sender, RoutedEventArgs e)
@@ -1024,19 +1062,20 @@ public sealed partial class MainWindow : Window
     public async void Load()
     {
         string historiesPath = GetHistoriesPath();
-        if(!File.Exists(historiesPath))
+        if (!File.Exists(historiesPath))
             return;
-        
+
         string json = File.ReadAllText(historiesPath);
 
         List<Record>? records = JsonSerializer.Deserialize<List<Record>>(json);
-        if(records == null)
+        if (records == null)
             return;
-        
-        foreach(Record record in records){
+
+        foreach (Record record in records)
+        {
             TabViewItem tabViewItem = CreateNewTab();
             Tabs.TabItems.Add(tabViewItem);
-            if(tabViewItem.Content is Client client)
+            if (tabViewItem.Content is Client client)
             {
                 client.activeIdx = record.ActiveIdx;
                 client.historyItems = record.Histories;
@@ -1054,7 +1093,7 @@ public sealed partial class MainWindow : Window
         // Base64 文字列をバイト配列に変換
         byte[] bytes = Convert.FromBase64String(base64String);
         // バイト配列を UTF-8 文字列に変換
-        string originalString = Encoding.UTF8.GetString(bytes);   
+        string originalString = Encoding.UTF8.GetString(bytes);
         return originalString;
     }
 
@@ -1072,11 +1111,12 @@ public sealed partial class MainWindow : Window
     {
         // 各タブを走査して、情報を集める
         List<Record> records = new();
-        foreach(TabViewItem tabItem in Tabs.TabItems)
+        foreach (TabViewItem tabItem in Tabs.TabItems)
         {
-            if(tabItem.Content is Client client)
+            if (tabItem.Content is Client client)
             {
-                Record record = new(){
+                Record record = new()
+                {
                     Header = ConvertToBase64(tabItem.Header as string),
                     ActiveIdx = client.activeIdx,
                     Histories = client.historyItems
@@ -1112,13 +1152,37 @@ public sealed partial class MainWindow : Window
     {
         string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         string yukariPath = Path.Join(documentsPath, ".yukari");
-        if(!File.Exists(yukariPath))
+        if (!File.Exists(yukariPath))
         {
             Directory.CreateDirectory(yukariPath);
             File.SetAttributes(yukariPath, File.GetAttributes(yukariPath) | FileAttributes.Hidden);
         }
         string historiesPath = Path.Join(yukariPath, "records.json");
         return historiesPath;
+    }
+
+    void Click_AddAutomate(object sender, RoutedEventArgs e)
+    {
+        ChatItems.Items.Clear();
+        Automate automate = new()
+        {
+            mainWindow = this
+        };
+        TabViewItem newItem = new()
+        {
+            Header = NewTab.Text,
+            IconSource = new FontIconSource
+            {
+                Glyph = "\uE99A",
+            },
+            Content = automate
+        };
+        automate.tabItem = newItem;
+        // client.tabViewItem = newItem;
+        Grid.SetRow(Tabs, 1);
+        EditorPreview.Visibility = Visibility.Collapsed;
+        Tabs.TabItems.Add(newItem);
+        Tabs.SelectedItem = newItem;
     }
 }
 

@@ -405,3 +405,7 @@ FodyWeavers.xsd
 build/
 .env
 test-*
+
+*.py
+*.ts
+debug.txt

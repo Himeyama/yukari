@@ -1,0 +1,40 @@
+<Page
+    x:Class="Yukari.Automate"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Yukari"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:monaco="using:Monaco"
+    mc:Ignorable="d">
+    <Grid>
+        <Border CornerRadius="4" BorderBrush="Transparent" BorderThickness="0">
+            <Grid>
+                <!-- <GridSplitter Grid.Row="0" /> -->
+                <Grid Grid.Row="0" RowDefinitions="*, Auto">
+                    <ScrollViewer>
+                        <StackPanel Margin="8" Name="Chats" />
+                    </ScrollViewer>
+                    <Grid Grid.Row="1" ColumnDefinitions="*, Auto, Auto" Margin="8, 8, 16, 8">
+                        <TextBox Name="AutomateUserPrompt" />
+                        <Button Grid.Column="1" Margin="8, 0, 0, 0" Name="RetryButton" Click="Click_RetryAsync">
+                            <TextBlock x:Uid="Retry" Name="Retry" Text="Retry" Margin="16, 0, 16, 0" />
+                        </Button>
+                        <Button Style="{StaticResource AccentButtonStyle}" Grid.Column="2" Margin="8, 0, 0, 0" Name="SendButton" Click="Click_SendAsync">
+                            <TextBlock x:Uid="Send" Text="Send" Margin="16, 0, 16, 0" />
+                        </Button>
+                    </Grid>
+                    <Grid Visibility="Collapsed">
+                        <TextBlock x:Uid="Accept" Name="Accept" />
+                        <TextBlock x:Uid="Decline" Name="Decline" />
+                        <TextBlock x:Uid="AllowThisCommand" Name="AllowThisCommand" />
+                        <TextBlock x:Uid="AllowWriteThisContent" Name="AllowWriteThisContent" />
+                        <TextBlock x:Uid="Path" Name="Path" />
+                        <TextBlock x:Uid="Command" Name="Command" />
+                        <TextBlock x:Uid="Content" Name="FileContent" />
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>
