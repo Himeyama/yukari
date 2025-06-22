@@ -3,8 +3,10 @@ using System.ClientModel;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -235,7 +237,7 @@ public sealed partial class Automate : Page
         }
         else if (function == "read_file")
         {
-            string path = root.GetProperty("content").GetString();
+            string path = root.GetProperty("path").GetString();
             stackPanel = new StackPanel()
             {
                 Margin = new Thickness(8),
@@ -502,14 +504,15 @@ public sealed partial class Automate : Page
             {
                 string contentText = completion.Content[0].Text;
                 AssistantChatMessage assistantChatMessage = new(contentText);
-                AddAssistantChatBox(contentText);
+                // AddAssistantChatBox(contentText);
+                DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => AddAssistantChatBox(contentText));
                 messages.Add(assistantChatMessage);
             }
             else if (completion?.ToolCalls != null && completion.ToolCalls.Count > 0)
             {
                 // まず assistant 側の tool_calls を含んだメッセージを追加
                 AssistantChatMessage assistantCallMessage = new(completion.ToolCalls);
-                AddAssistantToolChatBox(completion.ToolCalls[0]);
+                DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => AddAssistantToolChatBox(completion.ToolCalls[0]));
                 messages.Add(assistantCallMessage);
                 string callId = completion.ToolCalls[0].Id;
                 await HandleToolCallsAsync(completion, callId);
@@ -581,6 +584,6 @@ public sealed partial class Automate : Page
 
     void Debug(string txt) {
         if (File.Exists("debug.txt"))
-            File.AppendAllText("debug.txt", txt);
+            File.AppendAllText("debug.txt", txt, Encoding.UTF8);
     }
 }
