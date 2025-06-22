@@ -7,12 +7,16 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Input;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using OpenAI;
 using OpenAI.Chat;
+using Windows.System;
+using Windows.UI.Core;
 
 
 namespace Yukari;
@@ -114,7 +118,8 @@ public sealed partial class Automate : Page
             TextWrapping = TextWrapping.Wrap,
             TextTrimming = TextTrimming.None,
             Margin = new Thickness(8),
-            Text = userMessage
+            Text = userMessage,
+            Foreground = (Brush)Application.Current.Resources["TextOnAccentFillColorPrimaryBrush"]
         };
 
         Border border = new()
@@ -505,14 +510,14 @@ public sealed partial class Automate : Page
                 string contentText = completion.Content[0].Text;
                 AssistantChatMessage assistantChatMessage = new(contentText);
                 // AddAssistantChatBox(contentText);
-                DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => AddAssistantChatBox(contentText));
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () => AddAssistantChatBox(contentText));
                 messages.Add(assistantChatMessage);
             }
             else if (completion?.ToolCalls != null && completion.ToolCalls.Count > 0)
             {
                 // まず assistant 側の tool_calls を含んだメッセージを追加
                 AssistantChatMessage assistantCallMessage = new(completion.ToolCalls);
-                DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => AddAssistantToolChatBox(completion.ToolCalls[0]));
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () => AddAssistantToolChatBox(completion.ToolCalls[0]));
                 messages.Add(assistantCallMessage);
                 string callId = completion.ToolCalls[0].Id;
                 await HandleToolCallsAsync(completion, callId);
@@ -542,16 +547,36 @@ public sealed partial class Automate : Page
         SendButton.IsEnabled = true;
     }
 
+    string GetModel()
+    {
+        return MainWindow.GetModel();
+    }
+
+    string GetApiKey()
+    {
+        return MainWindow.GetApiKey();
+    }
+
+    Uri GetEndpoint()
+    {
+        return MainWindow.GetEndpoint();
+    }
+
     async void Click_SendAsync(object sender, RoutedEventArgs e)
     {
-        client = new ChatClient(model: MainWindow.GetModel(), credential: new ApiKeyCredential(MainWindow.GetApiKey()), new OpenAIClientOptions()
+        client = new ChatClient(model: GetModel(), credential: new ApiKeyCredential(GetApiKey()), new OpenAIClientOptions()
         {
-            Endpoint = MainWindow.GetEndpoint()
+            Endpoint = GetEndpoint()
         });
         string prompt = AutomateUserPrompt.Text;
+        AutomateUserPrompt.Text = "";
+
+        string[] lines = prompt.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
+        string firstLine = lines.Length > 0 ? lines[0] : string.Empty;
+
         tabItem.Header = new TextBlock()
         {
-            Text = prompt,
+            Text = firstLine,
             TextWrapping = TextWrapping.NoWrap,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
@@ -564,9 +589,9 @@ public sealed partial class Automate : Page
 
     async void Click_RetryAsync(object sender, RoutedEventArgs e)
     {
-        client = new ChatClient(model: MainWindow.GetModel(), credential: new ApiKeyCredential(MainWindow.GetApiKey()), new OpenAIClientOptions()
+        client = new ChatClient(model: GetModel(), credential: new ApiKeyCredential(GetApiKey()), new OpenAIClientOptions()
         {
-            Endpoint = MainWindow.GetEndpoint()
+            Endpoint = GetEndpoint()
         });
         string prompt = Retry.Text;
         tabItem.Header = new TextBlock()
@@ -580,6 +605,35 @@ public sealed partial class Automate : Page
         DisabledSendButton();
         await SendAIAsync();
         EnabledSendButton();
+    }
+
+    void AutomateUserPrompt_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.Enter)
+        {
+            CoreVirtualKeyStates shiftState = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift);
+            bool isShiftPressed = shiftState.HasFlag(CoreVirtualKeyStates.Down);
+
+            if (isShiftPressed)
+            {
+                // TextBox 取得
+                if(sender is TextBox textBox)
+                {
+                    int cursorPosition = textBox.SelectionStart;
+                    string currentText = textBox.Text;
+                    // カーソル位置に \r\n を挿入
+                    textBox.Text = currentText.Insert(cursorPosition, "\r\n");
+                    // カーソルを改行後の位置に移動
+                    textBox.SelectionStart = cursorPosition + 2;
+                    e.Handled = true; // デフォルト動作（改行）を抑制
+                }
+            }
+            else
+            {
+                e.Handled = true;
+                Click_SendAsync(null, null);
+            }
+        }
     }
 
     void Debug(string txt) {

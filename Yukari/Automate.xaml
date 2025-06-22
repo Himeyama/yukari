@@ -16,7 +16,7 @@
                         <StackPanel Margin="8" Name="Chats" />
                     </ScrollViewer>
                     <Grid Grid.Row="1" ColumnDefinitions="*, Auto, Auto" Margin="8, 8, 16, 8">
-                        <TextBox Name="AutomateUserPrompt" />
+                        <TextBox Name="AutomateUserPrompt" KeyDown="AutomateUserPrompt_KeyDown" TextWrapping="Wrap" />
                         <Button Grid.Column="1" Margin="8, 0, 0, 0" Name="RetryButton" Click="Click_RetryAsync">
                             <TextBlock x:Uid="Retry" Name="Retry" Text="Retry" Margin="16, 0, 16, 0" />
                         </Button>
