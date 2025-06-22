@@ -99,18 +99,19 @@ public sealed partial class MainWindow : Window
 
     public async void InitPreviewer()
     {
-        string curDir = Directory.GetCurrentDirectory();
+        string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        string installDir = Path.GetDirectoryName(exePath) ?? "";
 
-        string editorPath = Path.Combine(curDir, "Yukari", "Assets", "mini-editor", "index.html");
-        string previewPath = Path.Combine(curDir, "Yukari", "Assets", "mini-editor", "markdown-preview.html");
+        string editorPath = Path.Combine(Directory.GetCurrentDirectory(), "Yukari", "Assets", "mini-editor", "index.html");
+        string previewPath = Path.Combine(Directory.GetCurrentDirectory(), "Yukari", "Assets", "mini-editor", "markdown-preview.html");
 
         if (!File.Exists(editorPath) || !File.Exists(previewPath))
         {
-            editorPath = Path.Combine(curDir, "..", "mini-editor", "index.html");
-            previewPath = Path.Combine(curDir, "..", "mini-editor", "markdown-preview.html");
+            editorPath = Path.Combine(installDir, "Assets", "mini-editor", "index.html");
+            previewPath = Path.Combine(installDir, "Assets", "mini-editor", "markdown-preview.html");
             if (!File.Exists(editorPath) || !File.Exists(previewPath))
             {
-                AddMessage($"Editor or Preview HTML file not found. Please check the file paths: {curDir}");
+                AddMessage($"Editor or Preview HTML file not found. Please check the file paths: {installDir}");
                 return;
             }
         }

@@ -29,10 +29,16 @@ public sealed partial class Automate : Page
     ChatTool readFileTool;
     ChatCompletionOptions options;
     ChatClient client;
+    string workingDirectory = "";
 
     public Automate()
     {
         InitializeComponent();
+        
+        workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        // ディレクトリを作成
+        Directory.CreateDirectory(workingDirectory);
+
 
         writeToFileTool = ChatTool.CreateFunctionTool(
             functionName: "write_to_file",
@@ -196,7 +202,7 @@ public sealed partial class Automate : Page
                         IsTextSelectionEnabled = true,
                         Margin = new Thickness(0),
                         FontWeight = FontWeights.Bold,
-                        Text = Path.Text
+                        Text = PathText.Text
                     },
                     new TextBlock()
                     {
@@ -241,7 +247,7 @@ public sealed partial class Automate : Page
                         IsTextSelectionEnabled = true,
                         Margin = new Thickness(0),
                         FontWeight = FontWeights.Bold,
-                        Text = Path.Text
+                        Text = PathText.Text
                     },
                     new TextBlock()
                     {
@@ -331,7 +337,7 @@ public sealed partial class Automate : Page
                                             new TextBlock()
                                             {
                                                 Margin = new Thickness(0, 0, 0, 0),
-                                                Text = Path.Text,
+                                                Text = PathText.Text,
                                                 TextWrapping = TextWrapping.Wrap,
                                                 FontWeight = FontWeights.Bold
                                             },
@@ -369,7 +375,7 @@ public sealed partial class Automate : Page
                                     return;
                                 }
 
-                                await File.WriteAllTextAsync(path, content);
+                                await File.WriteAllTextAsync(Path.Join(workingDirectory, path), content);
                                 string result = $"{path} に書き込み完了しました。";
                                 Debug(result);
                                 AddUserChatBox(result);
@@ -381,7 +387,7 @@ public sealed partial class Automate : Page
                         case "read_file":
                             {
                                 string path = root.GetProperty("path").GetString();
-                                string content = await File.ReadAllTextAsync(path);
+                                string content = await File.ReadAllTextAsync(Path.Join(workingDirectory, path));
                                 string result = $"{path} の内容:\n{content}";
                                 Debug(result);
                                 AddUserChatBox(result);
@@ -442,7 +448,8 @@ public sealed partial class Automate : Page
                                         RedirectStandardOutput = true,
                                         RedirectStandardError = true,
                                         UseShellExecute = false,
-                                        CreateNoWindow = true
+                                        CreateNoWindow = true,
+                                        WorkingDirectory = workingDirectory
                                     }
                                 };
 

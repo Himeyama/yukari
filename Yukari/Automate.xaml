@@ -29,7 +29,7 @@
                         <TextBlock x:Uid="Decline" Name="Decline" />
                         <TextBlock x:Uid="AllowThisCommand" Name="AllowThisCommand" />
                         <TextBlock x:Uid="AllowWriteThisContent" Name="AllowWriteThisContent" />
-                        <TextBlock x:Uid="Path" Name="Path" />
+                        <TextBlock x:Uid="Path" Name="PathText" />
                         <TextBlock x:Uid="Command" Name="Command" />
                         <TextBlock x:Uid="Content" Name="FileContent" />
                     </Grid>
