@@ -31,4 +31,5 @@
   <data name="Command.Text" xml:space="preserve"><value>Command:</value></data>
   <data name="Content.Text" xml:space="preserve"><value>Content:</value></data>
   <data name="Retry.Text" xml:space="preserve"><value>Retry</value></data>
+  <data name="Automate.Text" xml:space="preserve"><value>Automate</value></data>
 </root>

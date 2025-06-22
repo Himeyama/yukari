@@ -31,4 +31,5 @@
   <data name="Command.Text" xml:space="preserve"><value>コマンド:</value></data>
   <data name="Content.Text" xml:space="preserve"><value>内容:</value></data>
   <data name="Retry.Text" xml:space="preserve"><value>再試行</value></data>
+  <data name="Automate.Text" xml:space="preserve"><value>自動操縦モード</value></data>
 </root>
