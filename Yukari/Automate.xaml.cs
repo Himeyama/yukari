@@ -308,15 +308,18 @@ public sealed partial class Automate : Page
         return JsonSerializer.Serialize(messages, options);
     }
 
-    async Task HandleToolCallsAsync(ChatCompletion completion, string callId = null)
+    async Task HandleToolCallsAsync(ChatCompletion completion)
     {
         if (completion.FinishReason == ChatFinishReason.ToolCalls && completion.ToolCalls is { Count: > 0 })
         {
+            AssistantChatMessage assistantCallMessage = new(completion.ToolCalls);
+            messages.Add(assistantCallMessage);
+
             foreach (ChatToolCall toolCall in completion.ToolCalls)
             {
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () => AddAssistantToolChatBox(toolCall));
                 string name = toolCall.FunctionName;
                 BinaryData argsJson = toolCall.FunctionArguments;
-                string toolCallId = toolCall.Id;
 
                 try
                 {
@@ -329,7 +332,7 @@ public sealed partial class Automate : Page
                             {
                                 string path = root.GetProperty("path").GetString();
                                 string content = root.GetProperty("content").GetString();
-                                
+
                                 ContentDialog dialog = new()
                                 {
                                     XamlRoot = mainWindow.Content.XamlRoot,
@@ -386,7 +389,7 @@ public sealed partial class Automate : Page
                                 string result = $"{path} に書き込み完了しました。";
                                 Debug(result);
                                 AddUserChatBox(result);
-                                messages.Add(new ToolChatMessage(callId, result));
+                                messages.Add(new ToolChatMessage(toolCall.Id, result));
                                 await SendAIAsync();
                                 break;
                             }
@@ -398,7 +401,7 @@ public sealed partial class Automate : Page
                                 string result = $"{path} の内容:\n{content}";
                                 Debug(result);
                                 AddUserChatBox(result);
-                                messages.Add(new ToolChatMessage(callId, result));
+                                messages.Add(new ToolChatMessage(toolCall.Id, result));
                                 await SendAIAsync();
                                 break;
                             }
@@ -474,7 +477,7 @@ public sealed partial class Automate : Page
                                 // Console.WriteLine(result);
                                 AddUserChatBox(result);
                                 Debug(result);
-                                messages.Add(new ToolChatMessage(callId, result));
+                                messages.Add(new ToolChatMessage(toolCall.Id, result));
                                 await SendAIAsync();
                                 break;
                             }
@@ -516,11 +519,7 @@ public sealed partial class Automate : Page
             else if (completion?.ToolCalls != null && completion.ToolCalls.Count > 0)
             {
                 // まず assistant 側の tool_calls を含んだメッセージを追加
-                AssistantChatMessage assistantCallMessage = new(completion.ToolCalls);
-                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () => AddAssistantToolChatBox(completion.ToolCalls[0]));
-                messages.Add(assistantCallMessage);
-                string callId = completion.ToolCalls[0].Id;
-                await HandleToolCallsAsync(completion, callId);
+                await HandleToolCallsAsync(completion);
                 return;
             }
             else
